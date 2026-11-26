@@ -9,6 +9,25 @@ WEB = Path(__file__).resolve().parents[1]
 SOURCE = WEB.parent / 'Câu hỏi Giáo Trình'
 NS = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
 
+COURSE_META = {
+    'qp1': {
+        'subtitle': 'Đường lối quốc phòng & an ninh',
+        'note': 'Bộ giáo trình QP1 bắt đầu từ bài 2. Bài 1 chưa có câu hỏi trong tài liệu nguồn.',
+        'accent': 'teal',
+    },
+    'qp2': {
+        'subtitle': 'Công tác quốc phòng & an ninh',
+        'note': '',
+        'accent': 'orange',
+    },
+}
+
+
+def require(condition, message):
+    """Raise ValueError unconditionally even when Python runs with -O."""
+    if not condition:
+        raise ValueError(message)
+
 
 def extract(course, total, first_lesson, last_lesson):
     filename = f'AZOTA_GIAO_TRINH_{course.upper()}_{total}_CAU_CO_DAP_AN.docx'
@@ -41,18 +60,28 @@ def extract(course, total, first_lesson, last_lesson):
             questions[-1]['options'].append({'letter': match[1], 'text': match[2]})
             if paragraph.findall('.//w:highlight', NS):
                 highlighted[questions[-1]['sourceNumber']].append(match[1])
-    assert len(questions) == len(key) == total, f'{course}: incorrect totals'
-    assert [q['sourceNumber'] for q in questions] == list(range(1, total + 1))
-    assert [l['number'] for l in lessons if l['count']] == list(range(first_lesson, last_lesson + 1))
+    require(len(questions) == len(key) == total, f'{course}: incorrect totals')
+    require([q['sourceNumber'] for q in questions] == list(range(1, total + 1)), f'{course}: missing or out-of-order question numbers')
+    require([l['number'] for l in lessons if l['count']] == list(range(first_lesson, last_lesson + 1)), f'{course}: invalid lesson numbers')
     for question in questions:
-        assert question['text'] and question['lesson'] is not None
-        assert [o['letter'] for o in question['options']] == list('ABCD')
-        assert all(o['text'] for o in question['options'])
-        assert highlighted[question['sourceNumber']] == [question['answer']], question['id']
+        require(question['text'] and question['lesson'] is not None, f"{question['id']}: missing question text or lesson")
+        require([o['letter'] for o in question['options']] == list('ABCD'), f"{question['id']}: invalid option letters")
+        require(all(o['text'] for o in question['options']), f"{question['id']}: empty option text")
+        require(highlighted[question['sourceNumber']] == [question['answer']], f"{question['id']}: highlight mismatch")
     for item in lessons:
-        assert sum(q['lesson'] == item['number'] for q in questions) == item['count']
+        require(sum(q['lesson'] == item['number'] for q in questions) == item['count'], f"{course} lesson {item['number']}: count mismatch")
     print(f'{course.upper()}: verified {total} questions; highlights match answer table.')
-    return {'id': course, 'name': course.upper(), 'source': filename, 'lessons': lessons, 'questions': questions}
+    meta = COURSE_META[course]
+    return {
+        'id': course,
+        'name': course.upper(),
+        'subtitle': meta['subtitle'],
+        'note': meta['note'],
+        'accent': meta['accent'],
+        'source': filename,
+        'lessons': lessons,
+        'questions': questions,
+    }
 
 
 if __name__ == '__main__':

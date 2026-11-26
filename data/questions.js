@@ -5,6 +5,9 @@ window.QP_DATA = {
     {
       "id": "qp1",
       "name": "QP1",
+      "subtitle": "Đường lối quốc phòng & an ninh",
+      "note": "Bộ giáo trình QP1 bắt đầu từ bài 2. Bài 1 chưa có câu hỏi trong tài liệu nguồn.",
+      "accent": "teal",
       "source": "AZOTA_GIAO_TRINH_QP1_200_CAU_CO_DAP_AN.docx",
       "lessons": [
         {
@@ -5269,6 +5272,9 @@ window.QP_DATA = {
     {
       "id": "qp2",
       "name": "QP2",
+      "subtitle": "Công tác quốc phòng & an ninh",
+      "note": "",
+      "accent": "orange",
       "source": "AZOTA_GIAO_TRINH_QP2_140_CAU_CO_DAP_AN.docx",
       "lessons": [
         {
