@@ -70,6 +70,14 @@
   let courseId = courses.some(c => c.id === settings.course) ? settings.course : courses[0].id;
   let history = store.get('qp-history-v1', []);
   if (!Array.isArray(history)) history = [];
+  const savedProfile = store.get('qp-profile-v1', null);
+  let profile = savedProfile && typeof savedProfile === 'object' && !Array.isArray(savedProfile)
+    ? {
+        name: typeof savedProfile.name === 'string' ? savedProfile.name.trim().slice(0, 40) : '',
+        dailyTarget: [10, 20, 40, 60].includes(savedProfile.dailyTarget) ? savedProfile.dailyTarget : 20
+      }
+    : {name: '', dailyTarget: 20};
+  let profileSavedNotice = '';
 
   // Stored sessions are validated before entering rendering or scoring flows.
   function validSession(s) {
@@ -273,7 +281,7 @@
           <div class="hero-copy">
             <span class="clay-pill mint"><span class="status-dot" aria-hidden="true"></span> ${totalQuestions} câu hỏi giáo trình · Học offline</span>
             <h1>Ôn chắc kiến thức.<br><span class="hero-accent">Tự tin</span> mỗi bài thi!</h1>
-            <p class="hero-lead">Chia nhỏ từng bài ${courseLabels}, luyện theo nhịp riêng của bạn và làm đề kiểm tra chấm điểm tự động ngay trên trình duyệt.</p>
+            <p class="hero-lead">${profile.name ? `Chào <strong>${escape(profile.name)}</strong>! ` : ''}Chia nhỏ từng bài ${courseLabels}, luyện theo nhịp riêng của bạn (mục tiêu ${profile.dailyTarget} câu/ngày) và làm đề kiểm tra tự động ngay trên trình duyệt.</p>
             <div class="hero-cta-row">
               <button type="button" class="button primary hero-btn" data-scroll="courses">Bắt đầu học miễn phí ${icon('arrow')}</button>
               <button type="button" class="button secondary hero-btn" data-action="open-exam">Tạo đề kiểm tra</button>
@@ -441,6 +449,100 @@
           </div>
         </div>
       </section>
+      <section id="benefits" class="band band-cream benefits-band">
+        <div class="section-inner">
+          <div class="section-head-center">
+            <span class="clay-pill peach">Vì sao chọn QP Study?</span>
+            <h2>Mọi thứ bạn cần để ôn thi vững vàng</h2>
+          </div>
+          <div class="benefits-grid">
+            <article class="soft-clay benefit-card">
+              <span class="clay-icon xl peach" aria-hidden="true">${icon('clock')}</span>
+              <h3>Học theo nhịp của bạn</h3>
+              <p>Linh hoạt 3 chế độ trả lời: chọn đến khi đúng, hiện đáp án ngay hoặc tự làm rồi chấm cuối bài.</p>
+            </article>
+            <article class="soft-clay benefit-card">
+              <span class="clay-icon xl sky" aria-hidden="true">${icon('book')}</span>
+              <h3>Chuẩn 340 câu giáo trình</h3>
+              <p>Tổng hợp đủ 200 câu QP1 và 140 câu QP2 từ tài liệu gốc, giữ nguyên số bài và câu nguồn để đối chiếu.</p>
+            </article>
+            <article class="soft-clay benefit-card">
+              <span class="clay-icon xl purple" aria-hidden="true">${icon('award')}</span>
+              <h3>Đề thi thử cân bằng</h3>
+              <p>Tự động chia đều câu hỏi giữa các bài bạn chọn, có đồng hồ đếm ngược và tự nộp khi hết giờ.</p>
+            </article>
+            <article class="soft-clay benefit-card">
+              <span class="clay-icon xl mint" aria-hidden="true">${icon('users')}</span>
+              <h3>Ôn câu sai &amp; học offline</h3>
+              <p>Lưu 50 lượt gần nhất ngay trên trình duyệt, lọc câu chưa đúng để luyện lại mọi lúc không cần mạng.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section id="testimonials" class="band band-white testimonials-band">
+        <div class="section-inner">
+          <div class="section-head-center">
+            <span class="clay-pill mint">Góc chia sẻ học viên</span>
+            <h2>Sinh viên nói gì về QP Study</h2>
+          </div>
+          <div class="testimonials-grid">
+            <article class="clay-card testimonial-card">
+              <div class="star-row" role="img" aria-label="Đánh giá 5 trên 5 sao">${Array.from({length: 5}, () => icon('starFill')).join('')}</div>
+              <p class="testimonial-quote">&ldquo;Mình thích nhất chế độ chọn đến khi đúng. Làm hết một lượt bài là nhớ luôn đáp án chuẩn giáo trình mà không bị ngợp.&rdquo;</p>
+              <div class="testimonial-author">
+                <span class="clay-icon md peach" aria-hidden="true">M</span>
+                <div><strong>Minh Anh</strong><small>Sinh viên Sư phạm Tin học</small></div>
+              </div>
+            </article>
+            <article class="clay-card testimonial-card">
+              <div class="star-row" role="img" aria-label="Đánh giá 5 trên 5 sao">${Array.from({length: 5}, () => icon('starFill')).join('')}</div>
+              <p class="testimonial-quote">&ldquo;Phần tạo đề kiểm tra 50 câu trong 30 phút rất giống thi thật. Nộp xong lọc riêng câu sai để ôn lại chỉ mất vài phút mỗi tối.&rdquo;</p>
+              <div class="testimonial-author">
+                <span class="clay-icon md sky" aria-hidden="true">H</span>
+                <div><strong>Hoàng Nam</strong><small>Sinh viên Sư phạm Toán học</small></div>
+              </div>
+            </article>
+            <article class="clay-card testimonial-card">
+              <div class="star-row" role="img" aria-label="Đánh giá 5 trên 5 sao">${Array.from({length: 5}, () => icon('starFill')).join('')}</div>
+              <p class="testimonial-quote">&ldquo;Mở thẳng trên điện thoại không cần Wi-Fi vẫn chạy mượt, lỡ thoát ra quay lại vẫn giữ nguyên đồng hồ và các câu đã chọn.&rdquo;</p>
+              <div class="testimonial-author">
+                <span class="clay-icon md purple" aria-hidden="true">T</span>
+                <div><strong>Thảo Vy</strong><small>Sinh viên Ngữ văn</small></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section id="signup" class="band band-sky signup-band">
+        <div class="section-inner">
+          <div class="clay-card cta-card">
+            <h2>Sẵn sàng bắt đầu ôn tập hôm nay?</h2>
+            <p class="cta-subtitle">Đặt mục tiêu học mỗi ngày trên trình duyệt hoặc vào thẳng phòng luyện tập — miễn phí hoàn toàn, không cần tài khoản.</p>
+            <form id="goal-form" class="goal-form">
+              <label class="goal-field">
+                <span>Tên của bạn (tùy chọn)</span>
+                <input id="goal-name" name="name" type="text" maxlength="40" placeholder="Ví dụ: Bảo Huy" value="${escape(profile.name)}">
+              </label>
+              <label class="goal-field">
+                <span>Mục tiêu mỗi ngày</span>
+                <select id="goal-target" name="dailyTarget">
+                  ${[10, 20, 40, 60].map(n => `<option value="${n}" ${profile.dailyTarget === n ? 'selected' : ''}>${n} câu / ngày</option>`).join('')}
+                </select>
+              </label>
+              <button type="submit" id="goal-save-btn" class="button secondary goal-submit">Lưu mục tiêu</button>
+            </form>
+            <p id="goal-status" class="goal-status" role="status" aria-live="polite" ${profileSavedNotice ? '' : 'hidden'}>${escape(profileSavedNotice)}</p>
+            <div class="cta-actions">
+              <button type="button" class="button primary hero-btn" data-scroll="courses">Bắt đầu học miễn phí ${icon('arrow')}</button>
+              <button type="button" class="button secondary hero-btn" data-action="open-exam">Tạo đề kiểm tra</button>
+            </div>
+            <div class="cta-trust">
+              <span>${icon('check')} Không cần thẻ hay đăng ký tài khoản</span>
+              <span>${icon('check')} Lưu tiến độ an toàn trên thiết bị</span>
+            </div>
+          </div>
+        </div>
+      </section>
     `;
   }
 
@@ -476,6 +578,8 @@
   });
 
   dialog.addEventListener('close', () => {
+    const activeEl = document.activeElement;
+    if (activeEl && activeEl !== document.body && !dialog.contains(activeEl)) return;
     if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus({preventScroll: true});
     else ($('.question-text') || main).focus({preventScroll: true});
   });
@@ -1055,6 +1159,23 @@
   });
 
   document.addEventListener('submit', event => {
+    if (event.target.id === 'goal-form') {
+      event.preventDefault();
+      const data = new FormData(event.target);
+      const rawName = String(data.get('name') ?? '').trim().slice(0, 40);
+      const rawTarget = Number(data.get('dailyTarget'));
+      profile = {
+        name: rawName,
+        dailyTarget: [10, 20, 40, 60].includes(rawTarget) ? rawTarget : 20
+      };
+      store.set('qp-profile-v1', profile);
+      profileSavedNotice = profile.name
+        ? `Đã lưu mục tiêu cho ${profile.name}: ${profile.dailyTarget} câu/ngày.`
+        : `Đã lưu mục tiêu ôn tập: ${profile.dailyTarget} câu/ngày.`;
+      renderHome();
+      $('#goal-save-btn')?.focus({preventScroll: true});
+      return;
+    }
     if (event.target.id !== 'setup-form') return;
     event.preventDefault();
     const form = event.target;

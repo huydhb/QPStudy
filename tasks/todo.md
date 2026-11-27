@@ -114,13 +114,13 @@
 **Description:** Thiết kế lại khu học tập trên nền trắng `#ffffff` (`#courses`) theo bố cục Featured Courses của mẫu tham chiếu: pill sky-blue, H2 + phụ đề, banner tiếp tục phiên đang làm (`resume-banner` nếu có), lưới 2×2 `.clay-card` nổi bật (2 thẻ chọn học phần `QP1` `[data-course="qp1"]`, `QP2` `[data-course="qp2"]` kèm tiến độ % & pill đánh giá; 2 thẻ thao tác nhanh: Đề kiểm tra tổng hợp `[data-action="exam"]` và Lịch sử & Ôn tập `[data-nav="history"]`), nối liền bảng **Luyện tập theo bài** (`.lesson-panel`) và hộp **Tạo đề kiểm tra** (`.exam-panel` giữ chính xác `<h3>Kiểm tra kiến thức của bạn</h3>`), kèm nút `.btn-secondary` cuối mục.
 
 **Acceptance criteria:**
-- [ ] Chọn `QP1` / `QP2` bằng chuột hoặc phím `Enter` cập nhật danh sách bài ngay lập tức và giữ focus trên nút `[data-course="..."]`.
-- [ ] Bài 1 QP1 vẫn `disabled` (`Chưa có dữ liệu`); bấm bất kỳ bài hợp lệ (`data-lesson`) mở modal cấu hình luyện tập; bấm `[data-action="exam"]` mở modal tạo đề.
-- [ ] Selector `.exam-panel h3` giữ đúng văn bản `"Kiểm tra kiến thức của bạn"` để đảm bảo tương thích bộ test tự động.
+- [x] Chọn `QP1` / `QP2` bằng chuột hoặc phím `Enter` cập nhật danh sách bài ngay lập tức và giữ focus trên nút `[data-course="..."]`.
+- [x] Bài 1 QP1 vẫn `disabled` (`Chưa có dữ liệu`); bấm bất kỳ bài hợp lệ (`data-lesson`) mở modal cấu hình luyện tập; bấm `[data-action="exam"]` mở modal tạo đề.
+- [x] Selector `.exam-panel h3` giữ đúng văn bản `"Kiểm tra kiến thức của bạn"` để đảm bảo tương thích bộ test tự động.
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Browser test pass: `python tests/browser_check.py`
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Browser test pass: `python tests/browser_check.py`
 
 **Dependencies:** Task 4
 
@@ -133,9 +133,9 @@
 ---
 
 ## Checkpoint: After Tasks 3-5 (Core Landing + Existing Flows)
-- [ ] `node --test tests/core.test.cjs` pass (10/10)
-- [ ] `python tests/browser_check.py` pass hoàn toàn (file:// + HTTP 200, 3 chế độ, resume, replace dialog, validation, focus, filter, QP2, storage, 4 viewports)
-- [ ] Kiểm tra nhanh bố cục trên desktop (`1440px`) và mobile (`375px`)
+- [x] `node --test tests/core.test.cjs` pass (10/10)
+- [x] `python tests/browser_check.py` pass hoàn toàn (file:// + HTTP 200, 3 chế độ, resume, replace dialog, validation, focus, filter, QP2, storage, 4 viewports)
+- [x] Kiểm tra nhanh bố cục trên desktop (`1440px`) và mobile (`375px`)
 
 ---
 
@@ -149,13 +149,13 @@
 3. **Lời mời đăng ký (`#signup`, nền `--secondary` `#add8e6`)**: Khung `.clay-card` nền trắng căn giữa (`max-width: 896px`), H2, phụ đề, form nhỏ lưu tên & mục tiêu ôn tập cục bộ (`qp-profile-v1` qua `store` an toàn khi storage bị chặn) kèm 2 nút CTA chính/phụ và 2 dòng cam kết có tick xanh.
 
 **Acceptance criteria:**
-- [ ] Đủ 3 section với màu nền xen kẽ đúng mẫu (`#fff9f5` -> `#ffffff` -> `#add8e6`), lưới responsive mượt (`4→2→1` cho Lợi ích, `3→1` cho Nhận xét).
-- [ ] Gửi form đặt mục tiêu hiển thị xác nhận thân thiện (`role="status"`), lưu vào `localStorage` (nếu cho phép) và cập nhật lời chào/mục tiêu trên thẻ tiến độ Hero mà không gây lỗi khi `localStorage` bị chặn.
-- [ ] Các nút CTA trong section hoạt động thật (cuộn tới chọn bài / mở modal tạo đề).
+- [x] Đủ 3 section với màu nền xen kẽ đúng mẫu (`#fff9f5` -> `#ffffff` -> `#add8e6`), lưới responsive mượt (`4→2→1` cho Lợi ích, `3→1` cho Nhận xét).
+- [x] Gửi form đặt mục tiêu hiển thị xác nhận thân thiện (`role="status"`), lưu vào `localStorage` (nếu cho phép) và cập nhật lời chào/mục tiêu trên thẻ tiến độ Hero mà không gây lỗi khi `localStorage` bị chặn.
+- [x] Các nút CTA trong section hoạt động thật (cuộn tới chọn bài / mở modal tạo đề).
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Browser test pass: `python tests/browser_check.py`
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Browser test pass: `python tests/browser_check.py`
 
 **Dependencies:** Task 5
 
