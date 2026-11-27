@@ -86,28 +86,28 @@ Task 1 (Local Fonts + Favicon)
 ## Task List
 
 ### Phase 1: Foundation
-- [ ] **Task 1**: Đóng gói font tiếng Việt cục bộ (`Baloo 2` + `Nunito`) và cập nhật favicon Claymorphism (`assets/fonts/*`, `assets/favicon.svg`, `index.html`)
-- [ ] **Task 2**: Xây dựng nền tảng CSS Tokens & lớp tiện ích Claymorphism trong `styles.css`
+- [x] **Task 1**: Đóng gói font tiếng Việt cục bộ (`Baloo 2` + `Nunito`) và cập nhật favicon Claymorphism (`assets/fonts/*`, `assets/favicon.svg`, `index.html`)
+- [x] **Task 2**: Xây dựng nền tảng CSS Tokens & lớp tiện ích Claymorphism trong `styles.css`
 
 ### Checkpoint 1: Foundation
-- [ ] Font hiển thị đầy đủ dấu tiếng Việt khi chạy offline; `node --test tests/core.test.cjs` pass; không phát sinh request lỗi HTTP.
+- [x] Font hiển thị đầy đủ dấu tiếng Việt khi chạy offline; `node --test tests/core.test.cjs` pass; không phát sinh request lỗi HTTP.
 
 ### Phase 2: Landing Shell & Core Learning Workspace
-- [ ] **Task 3**: Nâng cấp Floating Claymorphism Navbar (kèm menu mobile) và Footer 5 cột (`index.html`, `styles.css`, `app.js`)
-- [ ] **Task 4**: Triển khai Hero Section kèm Thẻ tiến độ học động & 3 badge SVG nổi (`app.js`, `styles.css`)
-- [ ] **Task 5**: Triển khai mục Khóa học nổi bật (lưới 2×2) tích hợp Góc luyện tập theo bài & Hộp tạo đề kiểm tra (`app.js`, `styles.css`)
+- [x] **Task 3**: Nâng cấp Floating Claymorphism Navbar (kèm menu mobile) và Footer 5 cột (`index.html`, `styles.css`, `app.js`)
+- [x] **Task 4**: Triển khai Hero Section kèm Thẻ tiến độ học động & 3 badge SVG nổi (`app.js`, `styles.css`)
+- [x] **Task 5**: Triển khai mục Khóa học nổi bật (lưới 2×2) tích hợp Góc luyện tập theo bài & Hộp tạo đề kiểm tra (`app.js`, `styles.css`)
 
 ### Checkpoint 2: Core Landing & Existing Flows
-- [ ] `node --test tests/core.test.cjs` và `python tests/browser_check.py` pass hoàn toàn (đủ 3 chế độ, resume, replace dialog, focus trap, QP1/QP2, 4 viewports).
+- [x] `node --test tests/core.test.cjs` và `python tests/browser_check.py` pass hoàn toàn (đủ 3 chế độ, resume, replace dialog, focus trap, QP1/QP2, 4 viewports).
 
 ### Phase 3: Full Landing Sections, App-Wide Polish & QA
-- [ ] **Task 6**: Triển khai 3 section: Lợi ích (4 thẻ `.soft-clay`), Nhận xét học viên (3 thẻ `.clay-card`), và Lời mời đăng ký mục tiêu học tập (`app.js`, `styles.css`)
-- [ ] **Task 7**: Đồng bộ giao diện Claymorphism cho Quiz, Result, History, Dialog + mở rộng kiểm thử `tests/browser_check.py` và chụp ảnh nghiệm thu (`styles.css`, `app.js`, `tests/browser_check.py`)
+- [x] **Task 6**: Triển khai 3 section: Lợi ích (4 thẻ `.soft-clay`), Nhận xét học viên (3 thẻ `.clay-card`), và Lời mời đăng ký mục tiêu học tập (`app.js`, `styles.css`)
+- [x] **Task 7**: Đồng bộ giao diện Claymorphism cho Quiz, Result, History, Dialog + mở rộng kiểm thử `tests/browser_check.py` và chụp ảnh nghiệm thu (`styles.css`, `app.js`, `tests/browser_check.py`)
 
 ### Checkpoint 3: Complete
-- [ ] Toàn bộ 10 unit tests (`core.test.cjs`) và toàn bộ Playwright browser checks (`browser_check.py`) pass trên cả `file://` và HTTP.
-- [ ] Không tràn ngang ở `375px`, `768px`, `1024px`, `1440px` trên mọi màn hình.
-- [ ] Ảnh chụp mới (`home-desktop.png`, `home-mobile.png`, `quiz-desktop.png`, `result-desktop.png`) khớp bảng màu, hình khối claymorphism, khoảng cách và độ tương phản chuẩn.
+- [x] Toàn bộ 10 unit tests (`core.test.cjs`) và toàn bộ Playwright browser checks (`browser_check.py`) pass trên cả `file://` và HTTP.
+- [x] Không tràn ngang ở `375px`, `768px`, `1024px`, `1440px` trên mọi màn hình.
+- [x] Ảnh chụp mới (`home-desktop.png`, `home-mobile.png`, `quiz-desktop.png`, `result-desktop.png`) khớp bảng màu, hình khối claymorphism, khoảng cách và độ tương phản chuẩn.
 
 ---
 

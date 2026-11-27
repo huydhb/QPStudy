@@ -172,14 +172,14 @@
 **Description:** Nâng cấp style của các view phụ (`.question-panel`, `.answer-option`, `.question-sidebar`, `.grid-cell`, `.timer`, `.result-hero`, `.breakdown`, `.review-card`, `.history-card`, `.empty-state`, `<dialog>` và các input/radio/checkbox) trong `styles.css` đồng bộ hoàn toàn ngôn ngữ Claymorphism (viền `3px`, bo góc `16px`–`24px`, màu đúng/sai rõ ràng dễ đọc). Mở rộng `tests/browser_check.py` để kiểm tra thêm menu mobile, các section landing page mới (Hero progress card, Benefits, Testimonials, Signup goal form), rồi chạy toàn bộ kiểm thử và duyệt ảnh chụp desktop + mobile.
 
 **Acceptance criteria:**
-- [ ] Tất cả 4 màn hình (Home, Quiz, Result, History) và `<dialog>` đồng nhất phong cách Claymorphism, rõ tương phản (`>= 4.5:1`), không vỡ bố cục ở `375px`, `768px`, `1024px`, `1440px`.
-- [ ] `tests/browser_check.py` kiểm chứng cả luồng cũ lẫn các thành phần landing page mới (navbar mobile toggle, thẻ tiến độ, 4 thẻ lợi ích, 3 nhận xét, form mục tiêu, footer).
-- [ ] Ảnh chụp `tests/artifacts/home-desktop.png`, `home-mobile.png`, `quiz-desktop.png`, `result-desktop.png` được mở kiểm tra trực quan, sạch lỗi cắt chữ/tràn khung/đè navbar.
+- [x] Tất cả 4 màn hình (Home, Quiz, Result, History) và `<dialog>` đồng nhất phong cách Claymorphism, rõ tương phản (`>= 4.5:1`), không vỡ bố cục ở `375px`, `768px`, `1024px`, `1440px`.
+- [x] `tests/browser_check.py` kiểm chứng cả luồng cũ lẫn các thành phần landing page mới (navbar mobile toggle, thẻ tiến độ, 4 thẻ lợi ích, 3 nhận xét, form mục tiêu, footer).
+- [x] Ảnh chụp `tests/artifacts/home-desktop.png`, `home-mobile.png`, `quiz-desktop.png`, `result-desktop.png` được mở kiểm tra trực quan, sạch lỗi cắt chữ/tràn khung/đè navbar.
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Browser test pass: `python tests/browser_check.py`
-- [ ] Visual check: Xem lại các ảnh chụp trong `tests/artifacts/` đối chiếu mẫu `uupm.cc/demo/educational-platform`.
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Browser test pass: `python tests/browser_check.py`
+- [x] Visual check: Xem lại các ảnh chụp trong `tests/artifacts/` đối chiếu mẫu `uupm.cc/demo/educational-platform`.
 
 **Dependencies:** Task 6
 
@@ -193,8 +193,8 @@
 ---
 
 ## Checkpoint: Complete (After Task 7)
-- [ ] `node --test tests/core.test.cjs` pass 100%
-- [ ] `python tests/browser_check.py` pass 100% (cả `file://` và HTTP, toàn bộ response 200, 0 lỗi console/pageerror)
-- [ ] Không tràn ngang trên `375px`, `768px`, `1024px`, `1440px` ở mọi view
-- [ ] Đã kiểm tra trực quan ảnh chụp màn hình desktop và mobile
-- [ ] Sẵn sàng bàn giao và đẩy lên GitHub Pages (`main`)
+- [x] `node --test tests/core.test.cjs` pass 100%
+- [x] `python tests/browser_check.py` pass 100% (cả `file://` và HTTP, toàn bộ response 200, 0 lỗi console/pageerror)
+- [x] Không tràn ngang trên `375px`, `768px`, `1024px`, `1440px` ở mọi view
+- [x] Đã kiểm tra trực quan ảnh chụp màn hình desktop và mobile
+- [x] Sẵn sàng bàn giao và đẩy lên GitHub Pages (`main`)

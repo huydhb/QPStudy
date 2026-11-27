@@ -226,8 +226,14 @@ with sync_playwright() as p:
     blocked = browser.new_context()
     blocked.add_init_script("Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}})")
     bpage = blocked.new_page()
+    berrors = []
+    bpage.on('pageerror', lambda e: berrors.append(str(e)))
     bpage.goto(url)
     assert bpage.locator('#storage-warning').is_visible()
+    bpage.locator('#goal-name').fill('Sinh viên')
+    bpage.locator('#goal-save-btn').click()
+    assert bpage.locator('#goal-status').is_visible()
+    assert berrors == [], berrors
     start_practice(bpage)
     assert bpage.locator('.question-panel').is_visible()
     blocked.close()
@@ -244,7 +250,43 @@ with sync_playwright() as p:
     http_page.goto(f'http://127.0.0.1:{server.server_port}/')
     http_page.locator('[data-action="exam"]').wait_for()
     assert all(status == 200 for status in responses), responses
+
+    # Verify offline Baloo 2 & Nunito fonts loaded cleanly
+    loaded_fonts = http_page.evaluate(
+        "async () => { await document.fonts.ready; return [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family); }"
+    )
+    assert any('Baloo 2' in f for f in loaded_fonts), loaded_fonts
+    assert any('Nunito' in f for f in loaded_fonts), loaded_fonts
+
+    # Verify Claymorphism landing page sections
+    assert http_page.locator('.progress-card').is_visible()
+    assert http_page.locator('#courses .featured-course-card').count() == 4
+    assert http_page.locator('#benefits .benefit-card').count() == 4
+    assert http_page.locator('#testimonials .testimonial-card').count() == 3
+    assert http_page.locator('#signup #goal-form').is_visible()
+    assert http_page.locator('.site-footer-band').is_visible()
+
+    # Verify mobile hamburger menu toggle & Escape focus return at 375px
+    http_page.set_viewport_size({'width': 375, 'height': 844})
+    http_page.locator('#menu-toggle').click()
+    assert http_page.locator('#primary-nav.open').is_visible()
+    check(http_page, 'document.documentElement.scrollWidth <= innerWidth', 'Mobile nav overflow at 375')
+    http_page.keyboard.press('Escape')
+    assert http_page.locator('#primary-nav.open').count() == 0
+    check(http_page, "document.activeElement?.id === 'menu-toggle'", 'Focus did not return to menu toggle')
+
+    # Verify local goal form persistence
+    http_page.set_viewport_size({'width': 1440, 'height': 950})
+    http_page.locator('#goal-name').fill('Bảo Huy')
+    http_page.locator('#goal-target').select_option('40')
+    http_page.locator('#goal-save-btn').click()
+    assert http_page.locator('#goal-status').is_visible()
+    assert 'Bảo Huy' in http_page.locator('#goal-status').inner_text()
+    http_page.reload()
+    assert http_page.locator('#goal-name').input_value() == 'Bảo Huy'
+    assert http_page.locator('#goal-target').input_value() == '40'
+
     server.shutdown()
     server.server_close()
     browser.close()
-    print('PASS: file + HTTP, 3 modes, reload, replace-dialog, validation, scroll, focus, filter, QP2, storage, 4 viewports; no browser errors.')
+    print('PASS: file + HTTP, 3 modes, reload, replace-dialog, validation, scroll, focus, filter, QP2, storage, 4 viewports, fonts, landing sections, mobile nav, goal form; no browser errors.')
