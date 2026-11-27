@@ -36,13 +36,13 @@
 **Description:** Cập nhật `:root` và phần Base trong `styles.css` theo đúng bảng màu (`#ffffff`, `#fff9f5`, `#fdbcb4`, `#add8e6`, `#e6e6fa`, `#98ff98`, `#22c55e`, `#15803d`, `#2d3748`, `#526074`, `#e2e8f0`, `#facc15`), font families (`Baloo 2` / `Nunito`), và định nghĩa các lớp nền tảng tái sử dụng: `.clay-card`, `.soft-clay`, `.btn-primary`, `.btn-secondary`, `.clay-pill`, `.icon-box`, `.section-band` (xen kẽ nền trắng/kem/xanh trời, `max-width: 1152px`), focus-visible WCAG AA và `prefers-reduced-motion`.
 
 **Acceptance criteria:**
-- [ ] Đủ biến CSS token trong `:root` và các lớp `.clay-card`, `.soft-clay`, `.btn-primary`, `.btn-secondary`, `.clay-pill`, `.icon-box` khớp thông số viền `3px`, bo góc `16px`/`24px` và bóng đổ kép của mẫu tham chiếu.
-- [ ] Tương phản chữ trên mọi bề mặt đạt tối thiểu `4.5:1` (nút `.btn-primary` dùng `#15803d` với chữ trắng `#fff`).
-- [ ] Tôn trọng `@media (prefers-reduced-motion: reduce)` và giữ `focus-visible` rõ nét cho bàn phím.
+- [x] Đủ biến CSS token trong `:root` và các lớp `.clay-card`, `.soft-clay`, `.btn-primary`, `.btn-secondary`, `.clay-pill`, `.icon-box` khớp thông số viền `3px`, bo góc `16px`/`24px` và bóng đổ kép của mẫu tham chiếu.
+- [x] Tương phản chữ trên mọi bề mặt đạt tối thiểu `4.5:1` (nút `.btn-primary` dùng `#15803d` với chữ trắng `#fff`).
+- [x] Tôn trọng `@media (prefers-reduced-motion: reduce)` và giữ `focus-visible` rõ nét cho bàn phím.
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Manual check: Kiểm tra không có lỗi cú pháp CSS và không làm vỡ layout cơ bản của các view hiện có.
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Manual check: Kiểm tra không có lỗi cú pháp CSS và không làm vỡ layout cơ bản của các view hiện có.
 
 **Dependencies:** Task 1
 
@@ -54,9 +54,9 @@
 ---
 
 ## Checkpoint: After Tasks 1-2 (Foundation)
-- [ ] `node --test tests/core.test.cjs` pass (10/10)
-- [ ] Font `Baloo 2` + `Nunito` tải cục bộ HTTP 200, hiển thị tiếng Việt sắc nét
-- [ ] Không có lỗi console hay lỗi cú pháp CSS
+- [x] `node --test tests/core.test.cjs` pass (10/10)
+- [x] Font `Baloo 2` + `Nunito` tải cục bộ HTTP 200, hiển thị tiếng Việt sắc nét
+- [x] Không có lỗi console hay lỗi cú pháp CSS
 
 ---
 
