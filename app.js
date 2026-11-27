@@ -260,6 +260,13 @@
     const activePct = activeTotal ? Math.round(activeDone / activeTotal * 100) : 0;
     const progressPct = active ? activePct : mastery.percent;
 
+    const qp1 = courses[0];
+    const qp2 = courses[1] || courses[0];
+    const qp1Mastery = courseMastery(qp1);
+    const qp2Mastery = courseMastery(qp2);
+    const qp1Active = qp1.lessons.filter(l => l.count).length;
+    const qp2Active = qp2.lessons.filter(l => l.count).length;
+
     main.innerHTML = `
       <section class="band band-cream hero-band">
         <div class="section-inner hero">
@@ -301,86 +308,139 @@
           </div>
         </div>
       </section>
-      <div class="app-shell">
-      ${active ? `
-        <section class="resume-banner">
-          <span class="resume-icon">${icon('clock')}</span>
-          <div>
-            <strong>Bạn có một bài đang làm</strong>
-            <p>${escape(active.config.course.toUpperCase())} · ${activeDone}/${activeTotal} câu đã chọn${active.deadline ? ' · Đồng hồ vẫn đang chạy' : ''}</p>
+      <section id="courses" class="band band-white courses-band">
+        <div class="section-inner">
+          <div class="section-head-center">
+            <span class="clay-pill sky">Học phần &amp; Lộ trình ôn tập</span>
+            <h2>Khám phá các học phần nổi bật</h2>
+            <p class="section-subtitle">Chọn học phần để luyện theo từng bài hoặc tạo đề kiểm tra tổng hợp sát cấu trúc giáo trình.</p>
           </div>
-          <button type="button" class="button primary" data-action="resume-session">Tiếp tục làm bài ${icon('arrow')}</button>
-        </section>
-      ` : ''}
-      <section class="learning-section">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">GÓC HỌC TẬP CỦA BẠN</span>
-            <h2>Hôm nay, mình ôn gì?</h2>
-          </div>
-          <span class="subtle">Chọn học phần để bắt đầu</span>
-        </div>
-        <div class="course-cards">
-          ${courses.map((item, i) => {
-            const isOrange = item.accent === 'orange' || (!item.accent && i > 0);
-            const subtitle = item.subtitle || (i ? 'Công tác quốc phòng & an ninh' : 'Đường lối quốc phòng & an ninh');
-            const activeLessons = item.lessons.filter(l => l.count).length;
-            return `
-              <button type="button" class="course-card ${item.id === courseId ? 'selected' : ''}" data-course="${escape(item.id)}" aria-pressed="${item.id === courseId}">
-                <span class="course-symbol ${isOrange ? 'orange' : ''}">${icon(isOrange ? 'shield' : 'book')}</span>
-                <span class="course-info">
-                  <span class="eyebrow">HỌC PHẦN ${i + 1}</span>
-                  <strong>${escape(subtitle)}</strong>
-                  <small>${item.questions.length} câu hỏi <span>·</span> ${activeLessons} bài có dữ liệu</small>
+          ${active ? `
+            <div class="resume-banner clay-card">
+              <span class="clay-icon md peach" aria-hidden="true">${icon('clock')}</span>
+              <div>
+                <strong>Bạn có một bài đang làm dở</strong>
+                <p>${escape(active.config.course.toUpperCase())} · ${activeDone}/${activeTotal} câu đã chọn${active.deadline ? ' · Đồng hồ vẫn đang chạy' : ''}</p>
+              </div>
+              <button type="button" class="button primary" data-action="resume-session">Tiếp tục làm bài ${icon('arrow')}</button>
+            </div>
+          ` : ''}
+          <div class="featured-courses-grid">
+            <button type="button" class="clay-card clay-interactive featured-course-card ${qp1.id === courseId ? 'selected' : ''}" data-course="${escape(qp1.id)}" aria-pressed="${qp1.id === courseId}">
+              <span class="clay-icon lg peach" aria-hidden="true">${icon('book')}</span>
+              <span class="fc-body">
+                <span class="fc-top">
+                  <span class="fc-title-group">
+                    <strong>Học phần 1 · ${escape(qp1.subtitle || 'Đường lối QP&AN')}</strong>
+                    <small>Giáo trình MILI2701 · ${qp1.id === courseId ? 'Đang hiển thị bài bên dưới' : 'Bấm để mở danh sách bài'}</small>
+                  </span>
+                  <span class="rating-pill">${icon('starFill')} ${qp1Mastery.percent}%</span>
                 </span>
-                <span class="course-radio">${item.id === courseId ? icon('check') : ''}</span>
-              </button>
-            `;
-          }).join('')}
-        </div>
-        <div class="study-layout">
-          <div class="lesson-panel">
-            <div class="panel-heading">
-              <h3>${icon('book')} Luyện tập theo bài</h3>
-              <span class="pill">${escape(c.name)}</span>
-            </div>
-            ${c.note ? `<p class="source-note">${escape(c.note)}</p>` : ''}
-            <div class="lesson-list">
-              ${c.lessons.map(l => {
-                const progress = lessonProgress(c, l.number);
-                return `
-                  <button type="button" class="lesson-row" data-lesson="${l.number}" ${!l.count ? 'disabled' : ''}>
-                    <span class="lesson-number">${String(l.number).padStart(2, '0')}</span>
-                    <span class="lesson-info">
-                      <strong>${escape(l.title)}</strong>
-                      <span>${l.count ? `${l.count} câu hỏi <span class="mini-progress"><i style="width:${progress / l.count * 100}%"></i></span> ${progress}/${l.count} đã đúng` : 'Chưa có dữ liệu'}</span>
-                    </span>
-                    ${l.count ? icon('arrow') : '<span class="pill muted">Chưa có</span>'}
-                  </button>
-                `;
-              }).join('')}
-            </div>
+                <span class="fc-meta">
+                  <span>${icon('book')} ${qp1Active} bài</span>
+                  <span>${icon('clock')} 20 câu/bài</span>
+                  <span>${icon('users')} ${qp1.questions.length} câu</span>
+                </span>
+              </span>
+            </button>
+            <button type="button" class="clay-card clay-interactive featured-course-card ${qp2.id === courseId ? 'selected' : ''}" data-course="${escape(qp2.id)}" aria-pressed="${qp2.id === courseId}">
+              <span class="clay-icon lg sky" aria-hidden="true">${icon('shield')}</span>
+              <span class="fc-body">
+                <span class="fc-top">
+                  <span class="fc-title-group">
+                    <strong>Học phần 2 · ${escape(qp2.subtitle || 'Công tác QP&AN')}</strong>
+                    <small>Giáo trình MILI2702 · ${qp2.id === courseId ? 'Đang hiển thị bài bên dưới' : 'Bấm để mở danh sách bài'}</small>
+                  </span>
+                  <span class="rating-pill">${icon('starFill')} ${qp2Mastery.percent}%</span>
+                </span>
+                <span class="fc-meta">
+                  <span>${icon('book')} ${qp2Active} bài</span>
+                  <span>${icon('clock')} 20 câu/bài</span>
+                  <span>${icon('users')} ${qp2.questions.length} câu</span>
+                </span>
+              </span>
+            </button>
+            <button type="button" class="clay-card clay-interactive featured-course-card" data-action="open-exam">
+              <span class="clay-icon lg purple" aria-hidden="true">${icon('target')}</span>
+              <span class="fc-body">
+                <span class="fc-top">
+                  <span class="fc-title-group">
+                    <strong>Đề kiểm tra tổng hợp</strong>
+                    <small>Trộn đều câu giữa nhiều bài · Tự nộp khi hết giờ</small>
+                  </span>
+                  <span class="rating-pill">${icon('starFill')} Thi thử</span>
+                </span>
+                <span class="fc-meta">
+                  <span>${icon('layers')} Tùy chọn bài</span>
+                  <span>${icon('clock')} 30 phút</span>
+                  <span>${icon('check')} 50 câu</span>
+                </span>
+              </span>
+            </button>
+            <button type="button" class="clay-card clay-interactive featured-course-card" data-action="go-history">
+              <span class="clay-icon lg mint" aria-hidden="true">${icon('chart')}</span>
+              <span class="fc-body">
+                <span class="fc-top">
+                  <span class="fc-title-group">
+                    <strong>Lịch sử &amp; Ôn lại câu sai</strong>
+                    <small>Xem lại đáp án chi tiết và luyện riêng câu chưa đúng</small>
+                  </span>
+                  <span class="rating-pill">${icon('starFill')} ${history.length} lượt</span>
+                </span>
+                <span class="fc-meta">
+                  <span>${icon('award')} Lưu 50 lượt</span>
+                  <span>${icon('target')} Chi tiết A–D</span>
+                  <span>${icon('spark')} Ôn nhanh</span>
+                </span>
+              </span>
+            </button>
           </div>
-          <aside class="exam-panel">
-            <span class="exam-illustration">${icon('target')}</span>
-            <span class="eyebrow">SẴN SÀNG THỬ SỨC?</span>
-            <h3>Kiểm tra <br>kiến thức của bạn</h3>
-            <p>Tạo đề ngẫu nhiên từ các bài đã chọn. Một bước chuẩn bị cho bài thi thật.</p>
-            <ul>
-              <li>${icon('check')} Chia đều câu giữa các bài</li>
-              <li>${icon('check')} Tùy chỉnh số câu &amp; thời gian</li>
-              <li>${icon('check')} Xem kết quả sau khi nộp</li>
-            </ul>
-            <button type="button" class="button accent full" data-action="exam">Tạo đề kiểm tra ${icon('arrow')}</button>
-            <span class="exam-hint">Mặc định 50 câu · 30 phút</span>
-            <div class="study-tip">
-              ${icon('spark')}
-              <p><strong>Mẹo nhỏ mỗi ngày</strong>Hãy bắt đầu với một bài, rồi luyện lại những câu bạn chưa chắc.</p>
+          <div class="study-layout">
+            <div class="lesson-panel clay-card">
+              <div class="panel-heading">
+                <h3>${icon('book')} Luyện tập theo bài</h3>
+                <span class="clay-pill sky pill-compact">${escape(c.name)}</span>
+              </div>
+              ${c.note ? `<p class="source-note">${escape(c.note)}</p>` : ''}
+              <div class="lesson-list">
+                ${c.lessons.map(l => {
+                  const progress = lessonProgress(c, l.number);
+                  return `
+                    <button type="button" class="lesson-row" data-lesson="${l.number}" ${!l.count ? 'disabled' : ''}>
+                      <span class="lesson-number">${String(l.number).padStart(2, '0')}</span>
+                      <span class="lesson-info">
+                        <strong>${escape(l.title)}</strong>
+                        <span>${l.count ? `${l.count} câu hỏi <span class="mini-progress"><i style="width:${progress / l.count * 100}%"></i></span> ${progress}/${l.count} đã đúng` : 'Chưa có dữ liệu'}</span>
+                      </span>
+                      ${l.count ? icon('arrow') : '<span class="pill muted">Chưa có</span>'}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
             </div>
-          </aside>
+            <aside class="exam-panel clay-card">
+              <span class="clay-icon lg peach exam-illustration" aria-hidden="true">${icon('target')}</span>
+              <span class="eyebrow">SẴN SÀNG THỬ SỨC?</span>
+              <h3>Kiểm tra kiến thức của bạn</h3>
+              <p>Tạo đề ngẫu nhiên từ các bài đã chọn. Một bước chuẩn bị cho bài thi thật.</p>
+              <ul>
+                <li>${icon('check')} Chia đều câu giữa các bài</li>
+                <li>${icon('check')} Tùy chỉnh số câu &amp; thời gian</li>
+                <li>${icon('check')} Xem kết quả sau khi nộp</li>
+              </ul>
+              <button type="button" class="button primary full" data-action="exam">Tạo đề kiểm tra ${icon('arrow')}</button>
+              <span class="exam-hint">Mặc định 50 câu · 30 phút</span>
+              <div class="study-tip">
+                ${icon('spark')}
+                <p><strong>Mẹo nhỏ mỗi ngày</strong>Hãy bắt đầu với một bài, rồi luyện lại những câu bạn chưa chắc.</p>
+              </div>
+            </aside>
+          </div>
+          <div class="courses-footer-cta">
+            <button type="button" class="button secondary" data-action="go-history">Xem tất cả lượt đã làm ${icon('arrow')}</button>
+          </div>
         </div>
       </section>
-      </div>
     `;
   }
 
