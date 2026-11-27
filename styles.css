@@ -1737,6 +1737,13 @@ select {
   margin-bottom: 8px;
 }
 
+.auto-advance-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .auto-advance-toggle {
   display: inline-flex;
   align-items: center;
@@ -1769,9 +1776,36 @@ select {
   background: var(--cta);
 }
 
-.auto-advance-toggle:focus-visible {
+.auto-advance-toggle:focus-visible,
+.auto-delay-select:focus-visible {
   outline: 3px solid var(--cta);
   outline-offset: 2px;
+}
+
+.auto-delay-select {
+  width: auto;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--text);
+  background: var(--bg);
+  color: var(--text);
+  font: 700 12px/1.1 var(--font-sans);
+  cursor: pointer;
+}
+
+.auto-delay-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setup-inline-field {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.setup-inline-field .field-label {
+  margin-top: 4px;
 }
 
 .progress-track {
@@ -2022,7 +2056,7 @@ select {
   border-radius: 999px;
   background: var(--cta);
   transform-origin: left center;
-  animation: auto-advance-progress 850ms linear forwards;
+  animation: auto-advance-progress var(--auto-delay, 850ms) linear forwards;
 }
 
 @keyframes auto-advance-progress {

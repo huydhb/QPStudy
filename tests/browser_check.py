@@ -322,6 +322,31 @@ with sync_playwright() as p:
     http_page.wait_for_timeout(1000)
     assert http_page.locator('.question-meta .eyebrow').inner_text().startswith('CÂU 3')
 
+    # Custom auto-advance delay controls timing and persists across reload
+    http_page.locator('#auto-advance-delay').select_option('2000')
+    http_page.reload()
+    http_page.locator('[data-action="resume-session"]').click()
+    assert http_page.locator('#auto-advance-delay').input_value() == '2000'
+    http_page.locator('[data-action="next"]').click()
+    q4 = source(http_page)
+    http_page.locator(f'[data-answer="{q4["answer"]}"]').click()
+    assert '2s' in http_page.locator('.answer-feedback').inner_text()
+    http_page.wait_for_timeout(1000)
+    assert http_page.locator('.question-meta .eyebrow').inner_text().startswith('CÂU 4')
+    http_page.wait_for_function(
+        "() => document.querySelector('.question-meta .eyebrow')?.innerText.startsWith('CÂU 5')",
+        timeout=3000,
+    )
+    http_page.locator('#auto-advance-delay').select_option('400')
+    q5 = source(http_page)
+    http_page.locator(f'[data-answer="{q5["answer"]}"]').click()
+    http_page.wait_for_function(
+        "() => document.querySelector('.question-meta .eyebrow')?.innerText.startsWith('CÂU 6')",
+        timeout=1500,
+    )
+    check(http_page, 'document.documentElement.scrollWidth <= innerWidth', 'Quiz desktop overflow with delay select')
+    http_page.screenshot(path=str(ARTIFACTS / 'quiz-desktop.png'), full_page=True)
+
     # Visibility-gated timer pauses immediately on leaving quiz or opening dialog
     http_page.locator('[data-action="next"]').click()
     http_page.wait_for_timeout(1200)

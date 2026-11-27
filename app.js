@@ -162,7 +162,21 @@
   let viewingStartedAt = null;
   let autoAdvanceTimer = null;
   let autoAdvanceTarget = null;
+  const autoAdvanceDelays = [
+    {ms: 400, label: '0.4 giây (Nhanh)', short: 'Sau 0.4s'},
+    {ms: 850, label: '0.85 giây (Mặc định)', short: 'Sau 0.85s'},
+    {ms: 1500, label: '1.5 giây', short: 'Sau 1.5s'},
+    {ms: 2000, label: '2 giây', short: 'Sau 2s'},
+    {ms: 3000, label: '3 giây', short: 'Sau 3s'},
+    {ms: 5000, label: '5 giây', short: 'Sau 5s'}
+  ];
   const shouldAutoAdvance = () => settings.autoAdvance !== false;
+  const getAutoAdvanceDelay = () => (
+    autoAdvanceDelays.some(d => d.ms === settings.autoAdvanceDelay)
+      ? settings.autoAdvanceDelay
+      : 850
+  );
+  const formatDelayLabel = ms => (ms % 1000 === 0 ? `${ms / 1000}s` : ms % 100 === 0 ? `${(ms / 1000).toFixed(1)}s` : `${(ms / 1000).toFixed(2)}s`);
 
   function clearAutoAdvance() {
     if (autoAdvanceTimer !== null) {
@@ -730,6 +744,12 @@
           </fieldset>
           <label class="check-label"><input type="checkbox" name="shuffle" ${old.shuffle ? 'checked' : ''}> Đảo thứ tự câu hỏi</label>
           <label class="check-label"><input type="checkbox" name="autoAdvance" ${shouldAutoAdvance() ? 'checked' : ''}> Tự qua câu khi chọn đúng</label>
+          <div id="setup-auto-delay-row" class="setup-inline-field" ${shouldAutoAdvance() ? '' : 'hidden'}>
+            <label class="field-label" for="setup-auto-delay">Thời gian chờ qua câu</label>
+            <select id="setup-auto-delay" name="autoAdvanceDelay" ${shouldAutoAdvance() ? '' : 'disabled'}>
+              ${autoAdvanceDelays.map(d => `<option value="${d.ms}" ${getAutoAdvanceDelay() === d.ms ? 'selected' : ''}>${d.label}</option>`).join('')}
+            </select>
+          </div>
         ` : `
           <fieldset>
             <legend>Phạm vi kiểm tra</legend>
@@ -815,6 +835,8 @@
     const done = Object.keys(s.answers).length;
     const flagged = s.flagged.includes(q.id);
     const flaggedSet = new Set(s.flagged);
+    const delayMs = getAutoAdvanceDelay();
+    const delayText = formatDelayLabel(delayMs);
     const legendHtml = s.config.mode === 'end'
       ? '<span><i class="legend-dot answered"></i>Đã chọn</span><span><i class="legend-dot"></i>Chưa chọn</span><span><i class="legend-dot flagged"></i>Xem lại</span>'
       : '<span><i class="legend-dot correct"></i>Đúng</span><span><i class="legend-dot incorrect"></i>Sai</span><span><i class="legend-dot"></i>Chưa chọn</span><span><i class="legend-dot flagged"></i>Xem lại</span>';
@@ -831,10 +853,15 @@
       <div class="quiz-progress-heading">
         <span>${done}/${s.questionIds.length} câu đã chọn</span>
         ${s.config.mode !== 'end' ? `
-          <button type="button" class="auto-advance-toggle ${shouldAutoAdvance() ? 'active' : ''}" data-action="toggle-auto-advance" aria-pressed="${shouldAutoAdvance()}">
-            <span class="toggle-dot" aria-hidden="true"></span>
-            Tự qua câu khi đúng: ${shouldAutoAdvance() ? 'Bật' : 'Tắt'}
-          </button>
+          <div class="auto-advance-controls">
+            <button type="button" class="auto-advance-toggle ${shouldAutoAdvance() ? 'active' : ''}" data-action="toggle-auto-advance" aria-pressed="${shouldAutoAdvance()}">
+              <span class="toggle-dot" aria-hidden="true"></span>
+              Tự qua câu khi đúng: ${shouldAutoAdvance() ? 'Bật' : 'Tắt'}
+            </button>
+            <select id="auto-advance-delay" class="auto-delay-select" aria-label="Thời gian chờ chuyển câu" ${shouldAutoAdvance() ? '' : 'disabled'}>
+              ${autoAdvanceDelays.map(d => `<option value="${d.ms}" ${delayMs === d.ms ? 'selected' : ''}>${d.short}</option>`).join('')}
+            </select>
+          </div>
         ` : ''}
         <span>${Math.round(done / s.questionIds.length * 100)}%</span>
       </div>
@@ -874,7 +901,7 @@
                   <span class="answer-feedback-copy">
                     ${a.correct
                       ? pendingAuto
-                        ? `${icon('check')} Chính xác! Tự động chuyển sang Câu ${autoAdvanceTarget + 1}...`
+                        ? `${icon('check')} Chính xác! Chuyển sang Câu ${autoAdvanceTarget + 1} sau ${delayText}...`
                         : `${icon('check')} Chính xác! ${s.config.mode === 'retry' && a.attempts.length > 1 ? `Bạn đã chọn ${a.attempts.length} lần.` : 'Tiếp tục phát huy nhé.'}`
                       : s.config.mode === 'retry'
                         ? 'Chưa chính xác. Hãy thử một đáp án khác.'
@@ -882,7 +909,7 @@
                   </span>
                   ${pendingAuto ? `<button type="button" class="auto-stay-btn" data-action="cancel-auto">Ở lại</button>` : ''}
                 </div>
-                ${pendingAuto ? '<span class="auto-advance-bar" aria-hidden="true"><i></i></span>' : ''}
+                ${pendingAuto ? `<span class="auto-advance-bar" style="--auto-delay:${delayMs}ms" aria-hidden="true"><i></i></span>` : ''}
               </div>
             `;
           })() : ''}
@@ -1239,13 +1266,14 @@
         }
         if (autoAdvanceTarget !== null) {
           const targetIdx = autoAdvanceTarget;
+          const delayMs = getAutoAdvanceDelay();
           autoAdvanceTimer = setTimeout(() => {
             autoAdvanceTimer = null;
             autoAdvanceTarget = null;
             if (view === 'quiz' && active && active.finishedAt === null && !dialog.open) {
               navigate(targetIdx);
             }
-          }, 850);
+          }, delayMs);
         }
         const next = main.querySelector(`.answer-option[data-answer="${CSS.escape(button.dataset.answer)}"]`);
         if (next && !next.disabled) next.focus({preventScroll: true});
@@ -1359,10 +1387,32 @@
       $('#review-filter')?.focus({preventScroll: true});
       return;
     }
+    if (event.target.id === 'auto-advance-delay') {
+      const nextDelay = Number(event.target.value);
+      const option = autoAdvanceDelays.find(d => d.ms === nextDelay);
+      if (option) {
+        settings.autoAdvanceDelay = nextDelay;
+        store.set('qp-settings-v1', settings);
+        if (clearAutoAdvance() && view === 'quiz') {
+          renderQuiz();
+          $('#auto-advance-delay')?.focus({preventScroll: true});
+        }
+        announce(`Đã đặt thời gian chờ chuyển câu là ${option.label}.`);
+      }
+      return;
+    }
     const form = $('#setup-form');
     if (!form) return;
     const err = $('#setup-error');
     if (err) err.textContent = '';
+
+    if (event.target.name === 'autoAdvance') {
+      const enabled = event.target.checked;
+      const row = $('#setup-auto-delay-row');
+      const select = $('#setup-auto-delay');
+      if (row) row.hidden = !enabled;
+      if (select) select.disabled = !enabled;
+    }
 
     if (event.target.id === 'time-limit') {
       const timed = event.target.value === 'yes';
@@ -1443,7 +1493,13 @@
       C.validate(config, c);
       begin(config, undefined, () => {
         settings[type] = config;
-        if (type === 'practice') settings.autoAdvance = data.has('autoAdvance');
+        if (type === 'practice') {
+          settings.autoAdvance = data.has('autoAdvance');
+          const delayVal = Number(data.get('autoAdvanceDelay'));
+          if (autoAdvanceDelays.some(d => d.ms === delayVal)) {
+            settings.autoAdvanceDelay = delayVal;
+          }
+        }
         store.set('qp-settings-v1', settings);
       });
     } catch (error) {
