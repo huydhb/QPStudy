@@ -67,13 +67,13 @@
 **Description:** Cập nhật `<header>` và `<footer>` trong `index.html` cùng tương tác trong `app.js` và style trong `styles.css` theo mẫu Floating Navbar (`.clay-card` cố định phía trên) và Footer 5 cột trên nền kem. Desktop hiển thị logo `QP Study`, các liên kết điều hướng (`Khóa học`, `Lợi ích`, `Nhận xét`, `Góc học tập` `[data-nav="home"]`, `Lịch sử` `[data-nav="history"]`) và nút CTA (`Bắt đầu ngay`). Mobile (`<768px`) thu gọn thành nút hamburger sky-blue `44×44px` mở menu thả xuống có `aria-expanded`, đóng khi chọn mục hoặc bấm `Escape`.
 
 **Acceptance criteria:**
-- [ ] Navbar nổi `.clay-card` cố định ở trên, không tràn ngang từ `375px` đến `1440px`, giữ nguyên nút `[data-nav="home"]`, `[data-nav="history"]` và click logo về `home`.
-- [ ] Menu mobile mở/đóng mượt, hỗ trợ bàn phím (`Escape` đóng menu, trả focus về nút hamburger), liên kết mục lục cuộn tới đúng section (`scroll-margin-top` tránh bị navbar che).
-- [ ] Footer 5 cột trên desktop (1 cột trên mobile) có các liên kết thao tác thật (chọn QP1, chọn QP2, mở tạo đề, mở lịch sử, cuộn tới lợi ích) và thanh bản quyền dưới cùng.
+- [x] Navbar nổi `.clay-card` cố định ở trên, không tràn ngang từ `375px` đến `1440px`, giữ nguyên nút `[data-nav="home"]`, `[data-nav="history"]` và click logo về `home`.
+- [x] Menu mobile mở/đóng mượt, hỗ trợ bàn phím (`Escape` đóng menu, trả focus về nút hamburger), liên kết mục lục cuộn tới đúng section (`scroll-margin-top` tránh bị navbar che).
+- [x] Footer 5 cột trên desktop (1 cột trên mobile) có các liên kết thao tác thật (chọn QP1, chọn QP2, mở tạo đề, mở lịch sử, cuộn tới lợi ích) và thanh bản quyền dưới cùng.
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Manual check: Kiểm tra click từng link trên desktop & mở/đóng menu mobile ở `375px`, xác nhận không tràn ngang.
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Manual check: Kiểm tra click từng link trên desktop & mở/đóng menu mobile ở `375px`, xác nhận không tràn ngang.
 
 **Dependencies:** Task 2
 

@@ -135,6 +135,36 @@
   let currentResult = null;
   let reviewFilter = 'all';
   let gridOpen = false;
+  let menuOpen = false;
+
+  const menuToggle = $('#menu-toggle');
+  const primaryNav = $('#primary-nav');
+
+  function setMenu(open, returnFocus = false) {
+    menuOpen = !!open;
+    if (primaryNav) primaryNav.classList.toggle('open', menuOpen);
+    if (menuToggle) {
+      menuToggle.setAttribute('aria-expanded', String(menuOpen));
+      menuToggle.setAttribute('aria-label', menuOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng');
+      menuToggle.innerHTML = menuOpen ? icon('close') : '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+      if (!menuOpen && returnFocus) menuToggle.focus({preventScroll: true});
+    }
+  }
+
+  function scrollToSection(id) {
+    const go = () => {
+      const target = document.getElementById(id) || $('.learning-section');
+      if (!target) return;
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+    };
+    if (view !== 'home') {
+      setView('home');
+      requestAnimationFrame(go);
+    } else {
+      go();
+    }
+  }
 
   const course = () => courses.find(c => c.id === courseId);
   const sessionCourse = s => courses.find(c => c.id === s.config.course);
@@ -166,6 +196,7 @@
 
   function setView(next) {
     view = next;
+    setMenu(false);
     document.body.classList.toggle('is-quiz', next === 'quiz');
     document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.nav === (next === 'history' ? 'history' : 'home'));
@@ -736,10 +767,36 @@
   }
 
   document.addEventListener('click', event => {
+    if (menuOpen && !event.target.closest('.site-header')) {
+      setMenu(false);
+    }
     const button = event.target.closest('button');
     if (!button || button.disabled) return;
+    if (button.id === 'menu-toggle') {
+      setMenu(!menuOpen);
+      return;
+    }
+    if (menuOpen && primaryNav?.contains(button)) {
+      setMenu(false);
+    }
     if (view === 'quiz' && active && C.expired(active)) { submit(true); return; }
     if (button.dataset.nav) return setView(button.dataset.nav);
+
+    if (button.dataset.scroll) {
+      scrollToSection(button.dataset.scroll);
+      return;
+    }
+
+    if (button.dataset.selectCourse) {
+      const nextCourse = button.dataset.selectCourse;
+      if (!courses.some(c => c.id === nextCourse)) return;
+      courseId = nextCourse;
+      settings.course = courseId;
+      store.set('qp-settings-v1', settings);
+      setView('home');
+      requestAnimationFrame(() => scrollToSection('courses'));
+      return;
+    }
 
     if (button.dataset.course) {
       if (!courses.some(c => c.id === button.dataset.course)) return;
@@ -786,9 +843,18 @@
 
     switch (button.dataset.action) {
       case 'home': return setView('home');
+      case 'go-history': return setView('history');
       case 'close-dialog': return dialog.close();
-      case 'exam': return configure('exam');
-      case 'resume': return setView('quiz');
+      case 'exam':
+      case 'open-exam':
+        return configure('exam');
+      case 'start-learning':
+        if (active) return setView('quiz');
+        scrollToSection('courses');
+        return;
+      case 'resume':
+      case 'resume-session':
+        return setView('quiz');
       case 'next': return navigate(active.current + 1);
       case 'previous': return navigate(active.current - 1);
       case 'flag': {
@@ -922,6 +988,13 @@
   $('.brand').addEventListener('click', event => {
     event.preventDefault();
     setView('home');
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && menuOpen && !dialog.open) {
+      event.preventDefault();
+      setMenu(false, true);
+    }
   });
 
   function tick() {
