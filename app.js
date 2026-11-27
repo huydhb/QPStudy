@@ -160,6 +160,34 @@
   let menuOpen = false;
   let viewingQuestionId = null;
   let viewingStartedAt = null;
+  let autoAdvanceTimer = null;
+  let autoAdvanceTarget = null;
+  const shouldAutoAdvance = () => settings.autoAdvance !== false;
+
+  function clearAutoAdvance() {
+    if (autoAdvanceTimer !== null) {
+      clearTimeout(autoAdvanceTimer);
+      autoAdvanceTimer = null;
+    }
+    const wasPending = autoAdvanceTarget !== null;
+    autoAdvanceTarget = null;
+    return wasPending;
+  }
+
+  const isQuestionDone = (s, id) => {
+    const ans = s.answers[id];
+    if (!ans) return false;
+    return s.config.mode === 'retry' ? Boolean(ans.correct) : true;
+  };
+
+  function nextTargetIndex(s) {
+    const len = s.questionIds.length;
+    for (let offset = 1; offset < len; offset++) {
+      const idx = (s.current + offset) % len;
+      if (!isQuestionDone(s, s.questionIds[idx])) return idx;
+    }
+    return null;
+  }
 
   const menuToggle = $('#menu-toggle');
   const primaryNav = $('#primary-nav');
@@ -283,6 +311,7 @@
   }
 
   function setView(next) {
+    clearAutoAdvance();
     if (view === 'quiz' && next !== 'quiz') {
       syncQuestionClock(true);
     }
@@ -700,6 +729,7 @@
             `).join('')}
           </fieldset>
           <label class="check-label"><input type="checkbox" name="shuffle" ${old.shuffle ? 'checked' : ''}> Đảo thứ tự câu hỏi</label>
+          <label class="check-label"><input type="checkbox" name="autoAdvance" ${shouldAutoAdvance() ? 'checked' : ''}> Tự qua câu khi chọn đúng</label>
         ` : `
           <fieldset>
             <legend>Phạm vi kiểm tra</legend>
@@ -747,6 +777,7 @@
 
   function begin(config, ids, onConfirm) {
     const start = () => {
+      clearAutoAdvance();
       onConfirm?.();
       active = C.createSession(config, courses.find(c => c.id === config.course), Date.now(), ids);
       persist();
@@ -799,6 +830,12 @@
       </div>
       <div class="quiz-progress-heading">
         <span>${done}/${s.questionIds.length} câu đã chọn</span>
+        ${s.config.mode !== 'end' ? `
+          <button type="button" class="auto-advance-toggle ${shouldAutoAdvance() ? 'active' : ''}" data-action="toggle-auto-advance" aria-pressed="${shouldAutoAdvance()}">
+            <span class="toggle-dot" aria-hidden="true"></span>
+            Tự qua câu khi đúng: ${shouldAutoAdvance() ? 'Bật' : 'Tắt'}
+          </button>
+        ` : ''}
         <span>${Math.round(done / s.questionIds.length * 100)}%</span>
       </div>
       <div class="progress-track"><span style="width:${done / s.questionIds.length * 100}%"></span></div>
@@ -829,15 +866,26 @@
               `;
             }).join('')}
           </div>
-          ${a && s.config.mode !== 'end' ? `
-            <div class="answer-feedback ${a.correct ? 'success' : 'error'}" role="status">
-              ${a.correct
-                ? `${icon('check')} Chính xác! ${s.config.mode === 'retry' && a.attempts.length > 1 ? `Bạn đã chọn ${a.attempts.length} lần.` : 'Tiếp tục phát huy nhé.'}`
-                : s.config.mode === 'retry'
-                  ? 'Chưa chính xác. Hãy thử một đáp án khác.'
-                  : `Đáp án đúng là ${escape(q.answer)}. Hãy ghi nhớ để lần sau làm tốt hơn.`}
-            </div>
-          ` : ''}
+          ${a && s.config.mode !== 'end' ? (() => {
+            const pendingAuto = a.correct && autoAdvanceTarget !== null;
+            return `
+              <div class="answer-feedback ${a.correct ? 'success' : 'error'} ${pendingAuto ? 'auto-advancing' : ''}" role="status">
+                <div class="answer-feedback-row">
+                  <span class="answer-feedback-copy">
+                    ${a.correct
+                      ? pendingAuto
+                        ? `${icon('check')} Chính xác! Tự động chuyển sang Câu ${autoAdvanceTarget + 1}...`
+                        : `${icon('check')} Chính xác! ${s.config.mode === 'retry' && a.attempts.length > 1 ? `Bạn đã chọn ${a.attempts.length} lần.` : 'Tiếp tục phát huy nhé.'}`
+                      : s.config.mode === 'retry'
+                        ? 'Chưa chính xác. Hãy thử một đáp án khác.'
+                        : `Đáp án đúng là ${escape(q.answer)}. Hãy ghi nhớ để lần sau làm tốt hơn.`}
+                  </span>
+                  ${pendingAuto ? `<button type="button" class="auto-stay-btn" data-action="cancel-auto">Ở lại</button>` : ''}
+                </div>
+                ${pendingAuto ? '<span class="auto-advance-bar" aria-hidden="true"><i></i></span>' : ''}
+              </div>
+            `;
+          })() : ''}
           <div class="question-navigation">
             <button type="button" class="button secondary" data-action="previous" ${s.current === 0 ? 'disabled' : ''}>${icon('back')} Câu trước</button>
             <span>${s.current + 1} / ${s.questionIds.length}</span>
@@ -884,6 +932,7 @@
   }
 
   function navigate(index) {
+    clearAutoAdvance();
     syncQuestionClock(true);
     active.current = Math.max(0, Math.min(active.questionIds.length - 1, index));
     persist();
@@ -894,6 +943,7 @@
   }
 
   function confirmSubmit() {
+    clearAutoAdvance();
     syncQuestionClock(true);
     const blank = active.questionIds.length - Object.keys(active.answers).length;
     const unfinished = active.config.mode === 'retry'
@@ -911,6 +961,7 @@
   }
 
   function submit(auto = false) {
+    clearAutoAdvance();
     syncQuestionClock(false);
     if (!active || !C.finish(active)) return;
     const result = active;
@@ -1163,20 +1214,38 @@
 
     if (button.dataset.answer && active) {
       const q = questionById(sessionCourse(active), active.questionIds[active.current]);
+      clearAutoAdvance();
       syncQuestionClock(false);
       if (C.answer(active, q, button.dataset.answer)) {
+        const isImmediate = active.config.mode === 'retry' || active.config.mode === 'instant';
+        const answeredRight = Boolean(active.answers[q.id]?.correct);
+        if (isImmediate && answeredRight && shouldAutoAdvance()) {
+          autoAdvanceTarget = nextTargetIndex(active);
+        }
         persist();
         renderQuiz();
         if (active.config.mode === 'end') {
           announce(`Đã chọn đáp án ${button.dataset.answer}.`);
         } else {
           announce(
-            active.answers[q.id].correct
-              ? 'Chính xác.'
+            answeredRight
+              ? autoAdvanceTarget !== null
+                ? `Chính xác. Đang chuyển sang câu ${autoAdvanceTarget + 1}.`
+                : 'Chính xác.'
               : active.config.mode === 'retry'
                 ? 'Chưa đúng, hãy thử lại.'
                 : `Chưa đúng. Đáp án đúng là ${q.answer}.`
           );
+        }
+        if (autoAdvanceTarget !== null) {
+          const targetIdx = autoAdvanceTarget;
+          autoAdvanceTimer = setTimeout(() => {
+            autoAdvanceTimer = null;
+            autoAdvanceTarget = null;
+            if (view === 'quiz' && active && active.finishedAt === null && !dialog.open) {
+              navigate(targetIdx);
+            }
+          }, 850);
         }
         const next = main.querySelector(`.answer-option[data-answer="${CSS.escape(button.dataset.answer)}"]`);
         if (next && !next.disabled) next.focus({preventScroll: true});
@@ -1223,6 +1292,7 @@
       case 'next': return navigate(active.current + 1);
       case 'previous': return navigate(active.current - 1);
       case 'flag': {
+        clearAutoAdvance();
         const id = active.questionIds[active.current];
         active.flagged = active.flagged.includes(id)
           ? active.flagged.filter(x => x !== id)
@@ -1232,6 +1302,20 @@
         $('[data-action="flag"]')?.focus({preventScroll: true});
         return;
       }
+      case 'cancel-auto':
+        clearAutoAdvance();
+        renderQuiz();
+        $('.question-text')?.focus({preventScroll: true});
+        announce('Đã giữ nguyên câu hiện tại.');
+        return;
+      case 'toggle-auto-advance':
+        settings.autoAdvance = !shouldAutoAdvance();
+        store.set('qp-settings-v1', settings);
+        if (!settings.autoAdvance) clearAutoAdvance();
+        renderQuiz();
+        $('[data-action="toggle-auto-advance"]')?.focus({preventScroll: true});
+        announce(settings.autoAdvance ? 'Đã bật tự qua câu khi chọn đúng.' : 'Đã tắt tự qua câu khi chọn đúng.');
+        return;
       case 'toggle-grid':
         gridOpen = !gridOpen;
         renderQuiz();
@@ -1359,6 +1443,7 @@
       C.validate(config, c);
       begin(config, undefined, () => {
         settings[type] = config;
+        if (type === 'practice') settings.autoAdvance = data.has('autoAdvance');
         store.set('qp-settings-v1', settings);
       });
     } catch (error) {
@@ -1399,7 +1484,9 @@
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+      const hadAuto = clearAutoAdvance();
       syncQuestionClock(true);
+      if (hadAuto && view === 'quiz' && active) renderQuiz();
     } else {
       syncQuestionClock(false);
       tick();

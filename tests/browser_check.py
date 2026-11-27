@@ -246,7 +246,9 @@ with sync_playwright() as p:
     Thread(target=server.serve_forever, daemon=True).start()
     http_page = context.new_page()
     responses = []
+    http_errors = []
     http_page.on('response', lambda response: responses.append(response.status))
+    http_page.on('pageerror', lambda e: http_errors.append(str(e)))
     http_page.goto(f'http://127.0.0.1:{server.server_port}/')
     http_page.locator('[data-action="exam"]').wait_for()
     assert all(status == 200 for status in responses), responses
@@ -286,7 +288,72 @@ with sync_playwright() as p:
     assert http_page.locator('#goal-name').input_value() == 'Bảo Huy'
     assert http_page.locator('#goal-target').input_value() == '40'
 
+    # Verify auto-advance UX (retry mode) and visibility-gated timer + time analytics
+    http_page.evaluate('localStorage.clear()')
+    http_page.reload()
+    start_practice(http_page, 'retry')
+    q1 = source(http_page)
+    wrong1 = next(o['letter'] for o in q1['options'] if o['letter'] != q1['answer'])
+    http_page.locator(f'[data-answer="{wrong1}"]').click()
+    http_page.wait_for_timeout(1000)
+    assert http_page.locator('.question-meta .eyebrow').inner_text().startswith('CÂU 1')
+
+    http_page.locator(f'[data-answer="{q1["answer"]}"]').click()
+    assert http_page.locator('[data-action="cancel-auto"]').is_visible()
+    http_page.wait_for_function(
+        "() => document.querySelector('.question-meta .eyebrow')?.innerText.startsWith('CÂU 2')",
+        timeout=3000,
+    )
+
+    # Toggling auto-advance OFF keeps user on current question after correct answer
+    http_page.locator('[data-action="toggle-auto-advance"]').click()
+    assert http_page.locator('[data-action="toggle-auto-advance"]').get_attribute('aria-pressed') == 'false'
+    q2 = source(http_page)
+    http_page.locator(f'[data-answer="{q2["answer"]}"]').click()
+    http_page.wait_for_timeout(1000)
+    assert http_page.locator('.question-meta .eyebrow').inner_text().startswith('CÂU 2')
+
+    # Clicking "Ở lại" cancels pending auto-advance cleanly
+    http_page.locator('[data-action="toggle-auto-advance"]').click()
+    http_page.locator('[data-action="next"]').click()
+    q3 = source(http_page)
+    http_page.locator(f'[data-answer="{q3["answer"]}"]').click()
+    http_page.locator('[data-action="cancel-auto"]').click()
+    http_page.wait_for_timeout(1000)
+    assert http_page.locator('.question-meta .eyebrow').inner_text().startswith('CÂU 3')
+
+    # Visibility-gated timer pauses immediately on leaving quiz or opening dialog
+    http_page.locator('[data-action="next"]').click()
+    http_page.wait_for_timeout(1200)
+    http_page.locator('[data-action="home"]').click()
+    paused_times = json.loads(http_page.evaluate("localStorage.getItem('qp-active-v1')"))['questionTimes']
+    paused_total = sum(paused_times.values())
+    assert paused_total >= 900, paused_times
+    http_page.wait_for_timeout(1200)
+    http_page.locator('[data-nav="history"]').click()
+    http_page.wait_for_timeout(600)
+    after_away_times = json.loads(http_page.evaluate("localStorage.getItem('qp-active-v1')"))['questionTimes']
+    assert after_away_times == paused_times, (paused_times, after_away_times)
+
+    http_page.locator('[data-nav="home"]').first.click()
+    http_page.locator('[data-action="resume-session"]').click()
+    http_page.locator('[data-action="finish"]').first.click()
+    http_page.wait_for_timeout(1100)
+    http_page.locator('[data-action="submit"]').click()
+    last_result = json.loads(http_page.evaluate("localStorage.getItem('qp-history-v1')"))[0]
+    submitted_total = sum(last_result.get('questionTimes', {}).values())
+    assert submitted_total - paused_total < 900, (paused_total, submitted_total)
+
+    assert http_page.locator('.time-analytics').is_visible()
+    assert 'undefined' not in http_page.locator('.time-analytics').inner_text()
+    assert http_page.locator('.analytics-kpi').count() == 4
+    assert http_page.locator('.time-bar-row').count() == 20
+    assert http_page.locator('.review-card .time-pill').count() == 20
+    http_page.screenshot(path=str(ARTIFACTS / 'result-desktop.png'), full_page=True)
+    http_page.locator('[data-jump-review="review-q-1"]').click()
+    assert http_errors == [], http_errors
+
     server.shutdown()
     server.server_close()
     browser.close()
-    print('PASS: file + HTTP, 3 modes, reload, replace-dialog, validation, scroll, focus, filter, QP2, storage, 4 viewports, fonts, landing sections, mobile nav, goal form; no browser errors.')
+    print('PASS: file + HTTP, 3 modes, reload, replace-dialog, validation, scroll, focus, filter, QP2, storage, 4 viewports, fonts, landing sections, mobile nav, goal form, auto-advance, paused question timing; no browser errors.')

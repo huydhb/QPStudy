@@ -236,11 +236,11 @@
 **Description:** Khi người dùng chọn đáp án **đúng** ở chế độ `Chọn đến khi đúng` (`retry`) hoặc `Hiện kết quả ngay` (`instant`), hiển thị phản hồi xanh rõ ràng kèm thanh đếm ngắn (~850ms) rồi tự chuyển sang câu kế tiếp (hoặc câu chưa làm tiếp theo; giữ nguyên ở câu cuối để xác nhận nộp bài), có nút bật/tắt `"Tự qua câu khi đúng"` và tự hủy chuyển câu nếu người dùng bấm `Xem lại`, chuyển câu thủ công hoặc thoát. Cập nhật `tests/browser_check.py` kiểm chứng cả 2 tính năng mới và kiểm tra ảnh chụp màn hình.
 
 **Acceptance criteria:**
-- [ ] Chọn đúng trong chế độ `retry` / `instant` tự chuyển câu mượt mà sau ~850ms; chọn sai hoặc ở chế độ `end` không tự nhảy.
-- [ ] Bấm `Xem lại`, `Câu trước`, `Câu tiếp`, bảng câu hoặc tắt toggle sẽ hủy tự chuyển câu ngay lập tức.
-- [ ] `tests/core.test.cjs` và `tests/browser_check.py` (bao gồm test auto-advance và pause timer/analytics) pass 100%.
+- [x] Chọn đúng trong chế độ `retry` / `instant` tự chuyển câu mượt mà sau ~850ms; chọn sai hoặc ở chế độ `end` không tự nhảy.
+- [x] Bấm `Xem lại`, `Câu trước`, `Câu tiếp`, bảng câu hoặc tắt toggle sẽ hủy tự chuyển câu ngay lập tức.
+- [x] `tests/core.test.cjs` và `tests/browser_check.py` (bao gồm test auto-advance và pause timer/analytics) pass 100%.
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Browser test pass: `python tests/browser_check.py`
-- [ ] Visual check: Kiểm tra ảnh chụp `quiz-desktop.png` và `result-desktop.png`.
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Browser test pass: `python tests/browser_check.py`
+- [x] Visual check: Kiểm tra ảnh chụp `quiz-desktop.png` và `result-desktop.png`.
