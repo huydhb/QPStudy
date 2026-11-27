@@ -188,3 +188,36 @@ test('blocked storage works in memory, corrupt JSON falls back silently, write f
   assert.deepEqual(quota.get('k', null), {fresh: true});
   assert.equal(quotaWarnings, 1);
 });
+
+test('recordQuestionTime tracks active per-question ms and summarize builds speed analytics', () => {
+  const s = C.createSession(config({type: 'exam', lessons: [2], mode: 'end', count: 3}), qp1, 1000);
+  const [q0, q1, q2] = s.questionIds.map(id => qp1.questions.find(q => q.id === id));
+  const wrongOpt = q1.options.find(o => o.letter !== q1.answer).letter;
+
+  assert.equal(C.recordQuestionTime(s, q0.id, 3500), true);
+  assert.equal(C.recordQuestionTime(s, q0.id, 1500), true);
+  assert.equal(C.recordQuestionTime(s, q1.id, 12000), true);
+  assert.equal(C.recordQuestionTime(s, 'nonexistent', 1000), false);
+  assert.equal(C.recordQuestionTime(s, q0.id, -500), false);
+  assert.equal(C.recordQuestionTime(s, q0.id, 0), false);
+
+  C.answer(s, q0, q0.answer, 5000);
+  C.answer(s, q1, wrongOpt, 18000);
+  C.finish(s, 30000);
+  assert.equal(C.recordQuestionTime(s, q2.id, 2000), false);
+
+  const summary = C.summarize(s, qp1.questions);
+  assert.equal(summary.activeElapsed, 17);
+  assert.equal(summary.timeStats.hasTrackedTimes, true);
+  assert.equal(summary.timeStats.totalMs, 17000);
+  assert.equal(summary.timeStats.totalSeconds, 17);
+  assert.equal(summary.timeStats.fastest.id, q0.id);
+  assert.equal(summary.timeStats.fastest.seconds, 5);
+  assert.equal(summary.timeStats.slowest.id, q1.id);
+  assert.equal(summary.timeStats.slowest.seconds, 12);
+  assert.equal(summary.timeStats.correctAvgSeconds, 5);
+  assert.equal(summary.timeStats.wrongAvgSeconds, 12);
+  assert.equal(summary.timeStats.perQuestion.length, 3);
+  assert.equal(summary.timeStats.perQuestion[2].status, 'blank');
+  assert.equal(summary.timeStats.perQuestion[2].seconds, 0);
+});

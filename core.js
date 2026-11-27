@@ -94,12 +94,34 @@
       config: {...config, lessons: [...config.lessons]},
       questionIds: questions.map(q => q.id),
       answers: {},
+      questionTimes: {},
       flagged: [],
       current: 0,
       startedAt: now,
       deadline: config.minutes ? now + config.minutes * 60000 : null,
       finishedAt: null
     };
+  }
+
+  function recordQuestionTime(session, questionId, deltaMs) {
+    if (
+      !session ||
+      session.finishedAt !== null ||
+      !Array.isArray(session.questionIds) ||
+      !session.questionIds.includes(questionId) ||
+      !Number.isFinite(deltaMs) ||
+      deltaMs <= 0
+    ) {
+      return false;
+    }
+    if (!session.questionTimes || typeof session.questionTimes !== 'object' || Array.isArray(session.questionTimes)) {
+      session.questionTimes = {};
+    }
+    const prev = Number.isFinite(session.questionTimes[questionId]) && session.questionTimes[questionId] >= 0
+      ? session.questionTimes[questionId]
+      : 0;
+    session.questionTimes[questionId] = Math.round(prev + deltaMs);
+    return true;
   }
 
   const expired = (session, now = Date.now()) => !!session.deadline && now >= session.deadline;
@@ -153,6 +175,44 @@
     }
     const total = session.questionIds.length;
     const graded = session.config.mode === 'retry' ? firstCorrect : correct;
+    const rawTimes = session.questionTimes && typeof session.questionTimes === 'object' ? session.questionTimes : {};
+    const perQuestion = [];
+    let totalMs = 0;
+    let fastest = null;
+    let slowest = null;
+    let correctMsSum = 0;
+    let correctTimedCount = 0;
+    let wrongMsSum = 0;
+    let wrongTimedCount = 0;
+
+    session.questionIds.forEach((id, index) => {
+      const q = byId.get(id);
+      const a = session.answers[id];
+      const status = !a ? 'blank' : (q && a.selected === q.answer) ? 'correct' : 'wrong';
+      const ms = Number.isFinite(rawTimes[id]) && rawTimes[id] > 0 ? Math.round(rawTimes[id]) : 0;
+      const seconds = +(ms / 1000).toFixed(1);
+      const entry = {id, index, ms, seconds, status};
+      perQuestion.push(entry);
+      totalMs += ms;
+      if (ms > 0) {
+        if (!fastest || ms < fastest.ms) fastest = entry;
+        if (!slowest || ms > slowest.ms) slowest = entry;
+      }
+      if (status === 'correct' && ms > 0) {
+        correctMsSum += ms;
+        correctTimedCount++;
+      } else if (status === 'wrong' && ms > 0) {
+        wrongMsSum += ms;
+        wrongTimedCount++;
+      }
+    });
+
+    const hasTrackedTimes = totalMs > 0;
+    const totalSeconds = Math.round(totalMs / 1000);
+    const activeElapsed = hasTrackedTimes
+      ? totalSeconds
+      : Math.max(0, Math.floor(((session.finishedAt ?? now) - session.startedAt) / 1000));
+
     return {
       total,
       correct,
@@ -162,6 +222,18 @@
       score: +(graded / total * 10).toFixed(1),
       percent: Math.round(graded / total * 100),
       elapsed: Math.max(0, Math.floor(((session.finishedAt ?? now) - session.startedAt) / 1000)),
+      activeElapsed,
+      timeStats: {
+        hasTrackedTimes,
+        totalMs,
+        totalSeconds,
+        averageSeconds: total ? +(totalMs / total / 1000).toFixed(1) : 0,
+        fastest,
+        slowest,
+        correctAvgSeconds: correctTimedCount ? +(correctMsSum / correctTimedCount / 1000).toFixed(1) : null,
+        wrongAvgSeconds: wrongTimedCount ? +(wrongMsSum / wrongTimedCount / 1000).toFixed(1) : null,
+        perQuestion
+      },
       lessons
     };
   }
@@ -206,7 +278,7 @@
     };
   }
 
-  const api = {shuffle, validate, sample, createSession, answer, summarize, expired, finish, storage};
+  const api = {shuffle, validate, sample, createSession, recordQuestionTime, answer, summarize, expired, finish, storage};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.QPCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

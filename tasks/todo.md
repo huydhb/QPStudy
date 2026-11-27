@@ -198,3 +198,49 @@
 - [x] Không tràn ngang trên `375px`, `768px`, `1024px`, `1440px` ở mọi view
 - [x] Đã kiểm tra trực quan ảnh chụp màn hình desktop và mobile
 - [x] Sẵn sàng bàn giao và đẩy lên GitHub Pages (`main`)
+
+---
+
+## Phase 4: Quiz Auto-Advance UX & Per-Question Timing Analytics
+
+## Task 8: Mở rộng `core.js` hỗ trợ đếm giây từng câu và tổng hợp phân tích thời gian
+
+**Description:** Thêm `questionTimes` vào `createSession()`, hàm `recordQuestionTime(session, questionId, deltaMs)` và mở rộng `summarize()` trong `core.js` để xuất `activeElapsed` cùng `timeStats` (tổng thời gian thực xem câu, trung bình/câu, câu nhanh nhất/lâu nhất, trung bình câu đúng vs sai, danh sách chi tiết từng câu).
+
+**Acceptance criteria:**
+- [x] `recordQuestionTime` từ chối phiên đã nộp, ID không hợp lệ hoặc `deltaMs <= 0`.
+- [x] `summarize().timeStats` tính chính xác từng câu, fastest/slowest và tách biệt đúng/sai.
+- [x] Toàn bộ unit test cũ và mới trong `tests/core.test.cjs` pass.
+
+**Verification:**
+- [x] Tests pass: `node --test tests/core.test.cjs`
+
+---
+
+## Task 9: Bộ đếm giây chỉ tính khi thấy câu hỏi và màn hình phân tích sau khi làm xong
+
+**Description:** Bổ sung bộ đếm thời gian gắn với trạng thái hiển thị thực của câu hỏi trong `app.js` (chỉ chạy khi `view === 'quiz'`, tab đang hiển thị `!document.hidden`, không mở `#dialog`, và dừng ngay khi chuyển về Góc học tập/Lịch sử, ẩn tab hoặc thoát trang) cùng khối **Phân tích thời gian làm bài** và thời gian từng câu trên màn hình Kết quả.
+
+**Acceptance criteria:**
+- [ ] Thoát khỏi phòng thi (về Góc học tập, Lịch sử, chuyển tab, đóng trang, mở dialog) thì bộ đếm câu và đồng hồ phiên không đếm giờ chờ.
+- [ ] Màn hình Kết quả hiển thị tổng thời gian thực, trung bình/câu, câu nhanh nhất/chậm nhất, so sánh tốc độ đúng/sai, biểu đồ thanh thời gian từng câu (click nhảy tới câu tương ứng) và thời gian trên từng `.review-card`.
+
+**Verification:**
+- [ ] Tests pass: `node --test tests/core.test.cjs`
+- [ ] Browser test pass: `python tests/browser_check.py`
+
+---
+
+## Task 10: Tối ưu UX tự chuyển câu khi chọn đúng + Kiểm thử toàn diện
+
+**Description:** Khi người dùng chọn đáp án **đúng** ở chế độ `Chọn đến khi đúng` (`retry`) hoặc `Hiện kết quả ngay` (`instant`), hiển thị phản hồi xanh rõ ràng kèm thanh đếm ngắn (~850ms) rồi tự chuyển sang câu kế tiếp (hoặc câu chưa làm tiếp theo; giữ nguyên ở câu cuối để xác nhận nộp bài), có nút bật/tắt `"Tự qua câu khi đúng"` và tự hủy chuyển câu nếu người dùng bấm `Xem lại`, chuyển câu thủ công hoặc thoát. Cập nhật `tests/browser_check.py` kiểm chứng cả 2 tính năng mới và kiểm tra ảnh chụp màn hình.
+
+**Acceptance criteria:**
+- [ ] Chọn đúng trong chế độ `retry` / `instant` tự chuyển câu mượt mà sau ~850ms; chọn sai hoặc ở chế độ `end` không tự nhảy.
+- [ ] Bấm `Xem lại`, `Câu trước`, `Câu tiếp`, bảng câu hoặc tắt toggle sẽ hủy tự chuyển câu ngay lập tức.
+- [ ] `tests/core.test.cjs` và `tests/browser_check.py` (bao gồm test auto-advance và pause timer/analytics) pass 100%.
+
+**Verification:**
+- [ ] Tests pass: `node --test tests/core.test.cjs`
+- [ ] Browser test pass: `python tests/browser_check.py`
+- [ ] Visual check: Kiểm tra ảnh chụp `quiz-desktop.png` và `result-desktop.png`.
