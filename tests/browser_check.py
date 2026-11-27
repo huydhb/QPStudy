@@ -345,6 +345,25 @@ with sync_playwright() as p:
         timeout=1500,
     )
     check(http_page, 'document.documentElement.scrollWidth <= innerWidth', 'Quiz desktop overflow with delay select')
+
+    # Moving to a new question scrolls the question panel into view rather than resetting to top=0
+    http_page.set_viewport_size({'width': 1280, 'height': 620})
+    http_page.evaluate("window.scrollTo({top: 0, behavior: 'instant'})")
+    http_page.locator('[data-index="6"]').click()
+    http_page.wait_for_function(
+        "() => { const r = document.querySelector('.question-panel')?.getBoundingClientRect(); return r && r.top >= 0 && r.top <= 40; }",
+        timeout=2000,
+    )
+    http_page.set_viewport_size({'width': 375, 'height': 667})
+    http_page.locator('[data-action="toggle-grid"]').click()
+    http_page.evaluate("window.scrollTo({top: 0, behavior: 'instant'})")
+    http_page.locator('[data-index="7"]').click()
+    http_page.wait_for_function(
+        "() => { const r = document.querySelector('.question-panel')?.getBoundingClientRect(); return r && r.top >= 0 && r.top <= 40; }",
+        timeout=2000,
+    )
+    http_page.locator('[data-action="toggle-grid"]').click()
+    http_page.set_viewport_size({'width': 1440, 'height': 950})
     http_page.screenshot(path=str(ARTIFACTS / 'quiz-desktop.png'), full_page=True)
 
     # Visibility-gated timer pauses immediately on leaving quiz or opening dialog

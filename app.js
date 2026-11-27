@@ -217,12 +217,15 @@
     }
   }
 
+  function scrollToElement(target, instant = false) {
+    if (!target) return;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({behavior: instant || reduced ? 'auto' : 'smooth', block: 'start'});
+  }
+
   function scrollToSection(id) {
     const go = () => {
-      const target = document.getElementById(id) || $('.learning-section');
-      if (!target) return;
-      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      target.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+      scrollToElement(document.getElementById(id) || $('.learning-section'));
     };
     if (view !== 'home') {
       setView('home');
@@ -966,7 +969,7 @@
     renderQuiz();
     syncQuestionClock(false);
     $('.question-text')?.focus({preventScroll: true});
-    window.scrollTo({top: 0, behavior: 'instant'});
+    scrollToElement($('.question-panel'));
   }
 
   function confirmSubmit() {
@@ -1289,11 +1292,7 @@
         reviewFilter = 'all';
         renderResult();
       }
-      const target = document.getElementById(button.dataset.jumpReview);
-      if (target) {
-        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-        target.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
-      }
+      scrollToElement(document.getElementById(button.dataset.jumpReview));
       return;
     }
 

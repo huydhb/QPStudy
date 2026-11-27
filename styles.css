@@ -1833,6 +1833,7 @@ select {
 }
 
 .question-panel {
+  scroll-margin-top: 24px;
   background: var(--bg);
   border: 3px solid var(--text);
   border-radius: var(--radius-card);
@@ -3113,6 +3114,7 @@ select {
   }
 
   .question-panel {
+    scroll-margin-top: 12px;
     padding: 20px 16px;
     width: 100%;
     order: 1;
