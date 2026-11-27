@@ -31,7 +31,13 @@
     close: '<path d="m6 6 12 12M6 18 18 6"/>',
     back: '<path d="M19 12H5m6-6-6 6 6 6"/>',
     chart: '<path d="M4 3v18h17M8 16v-5m5 5V7m5 9V4"/>',
-    shield: '<path d="m12 2 9 4v6c0 5-9 10-9 10S3 17 3 12V6l9-4Z"/><path d="m8 12 3 3 5-6"/>'
+    shield: '<path d="m12 2 9 4v6c0 5-9 10-9 10S3 17 3 12V6l9-4Z"/><path d="m8 12 3 3 5-6"/>',
+    play: '<polygon points="7 4 20 12 7 20 7 4"/>',
+    star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    starFill: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"/>',
+    award: '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>'
   };
 
   const icon = (name, cls = '') => (
@@ -197,6 +203,7 @@
   function setView(next) {
     view = next;
     setMenu(false);
+    document.body.classList.toggle('is-home', next === 'home');
     document.body.classList.toggle('is-quiz', next === 'quiz');
     document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.nav === (next === 'history' ? 'history' : 'home'));
@@ -207,6 +214,7 @@
   }
 
   function render() {
+    document.body.classList.toggle('is-home', view === 'home');
     if (view === 'home') renderHome();
     else if (view === 'quiz') renderQuiz();
     else if (view === 'result') renderResult();
@@ -225,50 +233,83 @@
     return seen.size;
   }
 
+  function courseMastery(c) {
+    const total = c.questions.length;
+    const correct = c.lessons.reduce((sum, l) => sum + (l.count ? lessonProgress(c, l.number) : 0), 0);
+    return {
+      correct,
+      total,
+      percent: total ? Math.round(correct / total * 100) : 0
+    };
+  }
+
+  function nextLessonForCourse(c) {
+    const activeLessons = c.lessons.filter(l => l.count > 0);
+    return activeLessons.find(l => lessonProgress(c, l.number) < l.count) || activeLessons[0] || {number: 1, count: 0, title: ''};
+  }
+
   function renderHome() {
     const c = course();
     const answered = new Set(history.flatMap(s => Object.keys(s.answers))).size;
     const courseLabels = courses.map(item => escape(item.name)).join(' &amp; ');
+    const mastery = courseMastery(c);
+    const nextLesson = nextLessonForCourse(c);
+    const activeCourse = active ? sessionCourse(active) : null;
+    const activeDone = active ? Object.keys(active.answers).length : 0;
+    const activeTotal = active ? active.questionIds.length : 0;
+    const activePct = activeTotal ? Math.round(activeDone / activeTotal * 100) : 0;
+    const progressPct = active ? activePct : mastery.percent;
+
     main.innerHTML = `
-      <section class="hero">
-        <div class="hero-copy">
-          <span class="eyebrow"><span class="small-line"></span> KHÔNG NGỪNG TIẾN BỘ</span>
-          <h1>Ôn chắc kiến thức.<br><span>Tự tin mỗi bài thi.</span></h1>
-          <p>Chia nhỏ từng bài, luyện theo cách của bạn.<br>${totalQuestions} câu hỏi ${courseLabels} sẵn sàng để chinh phục.</p>
-          <div class="hero-tags">
-            <span>${icon('check')} Đúng nguồn giáo trình</span>
-            <span>${icon('check')} Không cần kết nối mạng</span>
+      <section class="band band-cream hero-band">
+        <div class="section-inner hero">
+          <div class="hero-copy">
+            <span class="clay-pill mint"><span class="status-dot" aria-hidden="true"></span> ${totalQuestions} câu hỏi giáo trình · Học offline</span>
+            <h1>Ôn chắc kiến thức.<br><span class="hero-accent">Tự tin</span> mỗi bài thi!</h1>
+            <p class="hero-lead">Chia nhỏ từng bài ${courseLabels}, luyện theo nhịp riêng của bạn và làm đề kiểm tra chấm điểm tự động ngay trên trình duyệt.</p>
+            <div class="hero-cta-row">
+              <button type="button" class="button primary hero-btn" data-scroll="courses">Bắt đầu học miễn phí ${icon('arrow')}</button>
+              <button type="button" class="button secondary hero-btn" data-action="open-exam">Tạo đề kiểm tra</button>
+            </div>
+            <div class="hero-stats" aria-label="Tổng quan nền tảng">
+              <div><strong>${totalQuestions}</strong><small>Câu hỏi có đáp án</small></div>
+              <div><strong>${totalActiveLessons}</strong><small>Bài có câu hỏi</small></div>
+              <div><strong>${answered}</strong><small>Câu đã luyện &amp; nộp</small></div>
+            </div>
+          </div>
+          <div class="hero-progress-wrap">
+            <div class="clay-float float-target peach" aria-hidden="true">${icon('target')}</div>
+            <div class="clay-float float-book purple" aria-hidden="true">${icon('layers')}</div>
+            <div class="clay-float float-star mint" aria-hidden="true">${icon('starFill')}</div>
+            <div class="clay-card progress-card">
+              <div class="progress-card-head">
+                <span class="clay-icon md sky" aria-hidden="true">${icon('play')}</span>
+                <div>
+                  <strong>${active ? `${escape(activeCourse.name)} · Đang làm dở` : `${escape(c.name)} — ${escape(c.subtitle)}`}</strong>
+                  <small>${active ? `${activeDone}/${activeTotal} câu đã chọn${active.deadline ? ' · Đồng hồ đang chạy' : ''}` : `Tiếp theo: Bài ${String(nextLesson.number).padStart(2, '0')} · ${mastery.correct}/${mastery.total} câu vững`}</small>
+                </div>
+              </div>
+              <div class="progress-meta">
+                <span>${active ? 'Tiến độ lượt đang làm' : 'Tiến độ nắm vững'}</span>
+                <strong>${progressPct}%</strong>
+              </div>
+              <div class="clay-progress-track" aria-hidden="true"><span class="clay-progress-fill" style="width:${progressPct}%"></span></div>
+              ${active
+                ? `<button type="button" class="button primary full" data-action="resume">Tiếp tục làm bài ${icon('arrow')}</button>`
+                : `<button type="button" class="button primary full" data-quick-lesson="${nextLesson.number}">Luyện ngay Bài ${String(nextLesson.number).padStart(2, '0')} ${icon('arrow')}</button>`}
+            </div>
           </div>
         </div>
-        <div class="hero-art" aria-hidden="true">
-          <span class="orbit orbit-one"></span>
-          <span class="orbit orbit-two"></span>
-          <div class="art-float art-check">${icon('check')}</div>
-          <div class="art-card">
-            <div class="art-card-top">MỖI NGÀY MỘT CHÚT <span>01</span></div>
-            <div class="art-book">${icon('book')}</div>
-            <strong>Sẵn sàng tiến bộ?</strong>
-            <div class="art-progress"><span></span></div>
-            <div class="art-card-bottom">Học hiểu. Nhớ lâu. <span>+1 bước</span></div>
-          </div>
-          <div class="art-float art-spark">${icon('spark')}</div>
-          <div class="art-note">${icon('trophy')} Bạn làm được!</div>
-        </div>
       </section>
-      <section class="overview" aria-label="Tổng quan học tập">
-        <div>${icon('book')}<span><strong>${totalQuestions}</strong><small>Câu hỏi có đáp án</small></span></div>
-        <div>${icon('grid')}<span><strong>${totalActiveLessons}</strong><small>Bài có câu hỏi</small></span></div>
-        <div>${icon('target')}<span><strong>${answered}</strong><small>Câu đã luyện &amp; nộp</small></span></div>
-        <div>${icon('chart')}<span><strong>${history.length}</strong><small>Lượt đã hoàn thành</small></span></div>
-      </section>
+      <div class="app-shell">
       ${active ? `
         <section class="resume-banner">
           <span class="resume-icon">${icon('clock')}</span>
           <div>
             <strong>Bạn có một bài đang làm</strong>
-            <p>${escape(active.config.course.toUpperCase())} · ${Object.keys(active.answers).length}/${active.questionIds.length} câu đã chọn${active.deadline ? ' · Đồng hồ vẫn đang chạy' : ''}</p>
+            <p>${escape(active.config.course.toUpperCase())} · ${activeDone}/${activeTotal} câu đã chọn${active.deadline ? ' · Đồng hồ vẫn đang chạy' : ''}</p>
           </div>
-          <button type="button" class="button primary" data-action="resume">Tiếp tục làm bài ${icon('arrow')}</button>
+          <button type="button" class="button primary" data-action="resume-session">Tiếp tục làm bài ${icon('arrow')}</button>
         </section>
       ` : ''}
       <section class="learning-section">
@@ -339,6 +380,7 @@
           </aside>
         </div>
       </section>
+      </div>
     `;
   }
 
@@ -809,6 +851,7 @@
     }
 
     if (button.dataset.lesson) return configure('practice', +button.dataset.lesson);
+    if (button.dataset.quickLesson) return configure('practice', +button.dataset.quickLesson);
 
     if (button.dataset.answer && active) {
       const q = questionById(sessionCourse(active), active.questionIds[active.current]);

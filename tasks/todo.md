@@ -91,13 +91,13 @@
 **Description:** Thiết kế lại phần Hero trong `renderHome()` (`app.js`) và `styles.css` trên nền `--bg-cream` (`#fff9f5`), chia 2 cột trên desktop (`>=1024px`). Cột trái gồm pill mint `"340 câu hỏi chuẩn giáo trình · Học offline"`, H1 tiếng Việt nhấn xanh lá, mô tả, 2 nút CTA (`Bắt đầu học miễn phí →`, `Tạo đề kiểm tra`) và 3 chỉ số thống kê thật (`340` câu hỏi, `17` bài học, số câu đã luyện / lượt hoàn thành). Cột phải là **Thẻ tiến độ học** (`.clay-card`) tính toán từ dữ liệu thật (`active` session nếu đang làm dở -> nút `Tiếp tục làm bài` `[data-action="resume"]`, hoặc tiến độ học phần hiện tại -> nút luyện bài tiếp theo), kèm 3 badge pastel nổi dùng inline SVG (không dùng emoji).
 
 **Acceptance criteria:**
-- [ ] Hero có đủ khoảng đệm phía trên (`>=116px` mobile / `>=136px` desktop) để Floating Navbar không che khuất pill đầu trang.
-- [ ] Thẻ tiến độ hiển thị % tiến độ thật, thanh tiến độ xanh lá viền `2px`, hoạt động đúng ở cả 2 trạng thái (chưa có phiên dở vs đang có `active` session) và hiển thị gọn không tràn ngang trên điện thoại (`375px`).
-- [ ] Toàn bộ icon là inline SVG; không có emoji làm icon.
+- [x] Hero có đủ khoảng đệm phía trên (`>=116px` mobile / `>=136px` desktop) để Floating Navbar không che khuất pill đầu trang.
+- [x] Thẻ tiến độ hiển thị % tiến độ thật, thanh tiến độ xanh lá viền `2px`, hoạt động đúng ở cả 2 trạng thái (chưa có phiên dở vs đang có `active` session) và hiển thị gọn không tràn ngang trên điện thoại (`375px`).
+- [x] Toàn bộ icon là inline SVG; không có emoji làm icon.
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Manual check: Kiểm tra Hero ở `1440px` và `375px` cả khi trống lịch sử và khi có phiên đang làm dở.
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Manual check: Kiểm tra Hero ở `1440px` và `375px` cả khi trống lịch sử và khi có phiên đang làm dở.
 
 **Dependencies:** Task 3
 
