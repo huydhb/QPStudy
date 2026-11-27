@@ -60,10 +60,10 @@ with sync_playwright() as p:
     assert page.locator('.answer-option:enabled').count() == 0
     page.locator('[data-action="flag"]').click()
     page.locator('[data-action="next"]').click()
-    saved = page.evaluate("localStorage.getItem('qp-active-v1')")
 
     # Going home keeps active session; opening another lesson and cancelling preserves session & settings
     page.locator('[data-action="home"]').click()
+    saved = page.evaluate("localStorage.getItem('qp-active-v1')")
     saved_settings = page.evaluate("localStorage.getItem('qp-settings-v1')")
     page.locator('[data-lesson="3"]').click()
     page.locator('input[name="mode"][value="instant"]').check()

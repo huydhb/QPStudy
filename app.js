@@ -118,6 +118,14 @@
       ) {
         return false;
       }
+      if (s.questionTimes !== undefined) {
+        if (!s.questionTimes || typeof s.questionTimes !== 'object' || Array.isArray(s.questionTimes)) {
+          return false;
+        }
+        for (const [id, ms] of Object.entries(s.questionTimes)) {
+          if (!idSet.has(id) || !Number.isFinite(ms) || ms < 0) return false;
+        }
+      }
       for (const [id, a] of Object.entries(s.answers)) {
         const q = qMap.get(id);
         if (
@@ -150,6 +158,8 @@
   let reviewFilter = 'all';
   let gridOpen = false;
   let menuOpen = false;
+  let viewingQuestionId = null;
+  let viewingStartedAt = null;
 
   const menuToggle = $('#menu-toggle');
   const primaryNav = $('#primary-nav');
@@ -183,6 +193,13 @@
   const course = () => courses.find(c => c.id === courseId);
   const sessionCourse = s => courses.find(c => c.id === s.config.course);
   const persist = () => store.set('qp-active-v1', active);
+  const persistQuestionTimes = () => {
+    if (!active) return;
+    const stored = store.get('qp-active-v1', null);
+    if (stored && stored.id === active.id) {
+      store.set('qp-active-v1', {...stored, questionTimes: {...(active.questionTimes || {})}});
+    }
+  };
   const announce = text => { $('#live-status').textContent = text; };
 
   const time = seconds => {
@@ -191,6 +208,63 @@
     const secs = Math.floor(clamped % 60).toString().padStart(2, '0');
     return `${mins}:${secs}`;
   };
+
+  const formatSecs = ms => {
+    if (!Number.isFinite(ms) || ms <= 0) return '0s';
+    const secs = ms / 1000;
+    return secs < 10 ? `${secs.toFixed(1)}s` : `${Math.round(secs)}s`;
+  };
+
+  const isQuestionVisible = () => (
+    view === 'quiz' &&
+    active &&
+    active.finishedAt === null &&
+    !C.expired(active) &&
+    !document.hidden &&
+    !dialog.open
+  );
+
+  const activeTotalMs = (s, now = Date.now()) => {
+    if (!s) return 0;
+    const base = Object.values(s.questionTimes || {}).reduce(
+      (sum, v) => sum + (Number.isFinite(v) && v > 0 ? v : 0),
+      0
+    );
+    if (s === active && viewingQuestionId !== null && viewingStartedAt !== null && isQuestionVisible()) {
+      return base + Math.max(0, now - viewingStartedAt);
+    }
+    return base;
+  };
+
+  const currentQuestionMs = (s, qId, now = Date.now()) => {
+    const savedMs = s?.questionTimes?.[qId];
+    const base = Number.isFinite(savedMs) && savedMs > 0 ? savedMs : 0;
+    if (s === active && viewingQuestionId === qId && viewingStartedAt !== null && isQuestionVisible()) {
+      return base + Math.max(0, now - viewingStartedAt);
+    }
+    return base;
+  };
+
+  function syncQuestionClock(shouldPersist = false) {
+    const now = Date.now();
+    let changed = false;
+    if (active && viewingQuestionId !== null && viewingStartedAt !== null) {
+      const delta = now - viewingStartedAt;
+      if (delta > 0) changed = C.recordQuestionTime(active, viewingQuestionId, delta);
+      viewingStartedAt = now;
+    }
+    const nextId = isQuestionVisible() ? active.questionIds[active.current] : null;
+    if (nextId === null) {
+      viewingQuestionId = null;
+      viewingStartedAt = null;
+    } else if (nextId !== viewingQuestionId) {
+      viewingQuestionId = nextId;
+      viewingStartedAt = now;
+    } else if (viewingStartedAt === null) {
+      viewingStartedAt = now;
+    }
+    if (shouldPersist && changed && active) persistQuestionTimes();
+  }
 
   const date = timestamp => new Date(timestamp).toLocaleString('vi-VN', {
     day: '2-digit',
@@ -209,6 +283,9 @@
   }
 
   function setView(next) {
+    if (view === 'quiz' && next !== 'quiz') {
+      syncQuestionClock(true);
+    }
     view = next;
     setMenu(false);
     document.body.classList.toggle('is-home', next === 'home');
@@ -217,6 +294,7 @@
       btn.classList.toggle('active', btn.dataset.nav === (next === 'history' ? 'history' : 'home'));
     });
     render();
+    syncQuestionClock(false);
     main.focus({preventScroll: true});
     window.scrollTo({top: 0, behavior: 'instant'});
   }
@@ -578,6 +656,7 @@
   });
 
   dialog.addEventListener('close', () => {
+    syncQuestionClock(false);
     const activeEl = document.activeElement;
     if (activeEl && activeEl !== document.body && !dialog.contains(activeEl)) return;
     if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus({preventScroll: true});
@@ -715,7 +794,7 @@
         <span class="pill">${escape(c.name)} · ${s.config.type === 'exam' ? 'Kiểm tra' : escape(modes[s.config.mode])}</span>
         <span class="timer ${s.deadline && s.deadline - Date.now() <= 60000 ? 'urgent' : ''}">
           ${icon('clock')}
-          <span id="timer-value" role="timer" aria-label="Thời gian làm bài">${s.deadline ? time(Math.ceil((s.deadline - Date.now()) / 1000)) : time(Math.floor((Date.now() - s.startedAt) / 1000))}</span>
+          <span id="timer-value" role="timer" aria-label="Thời gian làm bài">${s.deadline ? time(Math.ceil((s.deadline - Date.now()) / 1000)) : time(Math.floor(activeTotalMs(s) / 1000))}</span>
         </span>
       </div>
       <div class="quiz-progress-heading">
@@ -727,7 +806,10 @@
         <section class="question-panel">
           <div class="question-meta">
             <span class="eyebrow">CÂU ${s.current + 1} <span class="subtle">/ ${s.questionIds.length}</span></span>
-            <button type="button" class="text-button ${flagged ? 'flag-active' : ''}" data-action="flag" aria-pressed="${flagged}">${icon('flag')} ${flagged ? 'Đã đánh dấu' : 'Xem lại'}</button>
+            <div class="question-meta-actions">
+              <span id="question-timer" class="q-timer" aria-label="Thời gian ở câu hiện tại">${icon('clock')} <span id="question-timer-value">${time(Math.floor(currentQuestionMs(s, q.id) / 1000))}</span></span>
+              <button type="button" class="text-button ${flagged ? 'flag-active' : ''}" data-action="flag" aria-pressed="${flagged}">${icon('flag')} ${flagged ? 'Đã đánh dấu' : 'Xem lại'}</button>
+            </div>
           </div>
           <span class="question-source">${escape(c.name)} · Bài ${q.lesson} · Câu ${q.sourceNumber} trong tài liệu</span>
           <h1 class="question-text" tabindex="-1">${escape(q.text)}</h1>
@@ -802,14 +884,17 @@
   }
 
   function navigate(index) {
+    syncQuestionClock(true);
     active.current = Math.max(0, Math.min(active.questionIds.length - 1, index));
     persist();
     renderQuiz();
+    syncQuestionClock(false);
     $('.question-text')?.focus({preventScroll: true});
     window.scrollTo({top: 0, behavior: 'instant'});
   }
 
   function confirmSubmit() {
+    syncQuestionClock(true);
     const blank = active.questionIds.length - Object.keys(active.answers).length;
     const unfinished = active.config.mode === 'retry'
       ? Object.values(active.answers).filter(a => !a.correct).length
@@ -822,15 +907,18 @@
         <button type="button" class="button primary" data-action="submit">Nộp và xem kết quả</button>
       </div>
     `);
+    syncQuestionClock(false);
   }
 
   function submit(auto = false) {
+    syncQuestionClock(false);
     if (!active || !C.finish(active)) return;
     const result = active;
     result.autoSubmitted = auto;
     history = [result, ...history.filter(s => s.id !== result.id)].slice(0, 50);
     store.set('qp-history-v1', history);
     active = null;
+    syncQuestionClock(false);
     persist();
     dialog.close();
     currentResult = result;
@@ -871,7 +959,7 @@
           <span><strong>${stats.correct}</strong>${retry ? 'Đã làm đúng' : 'Câu đúng'}</span>
           <span><strong>${stats.wrong}</strong>Chưa đúng</span>
           <span><strong>${stats.blank}</strong>Bỏ trống</span>
-          <span><strong>${time(stats.elapsed)}</strong>Thời gian</span>
+          <span><strong>${time(stats.activeElapsed)}</strong>${stats.timeStats.hasTrackedTimes ? 'Thời gian xem câu' : 'Thời gian'}</span>
         </div>
         ${retry ? `<p class="subtle">${stats.firstCorrect}/${stats.total} câu đúng lần đầu · ${stats.correct}/${stats.total} câu hoàn thành</p>` : ''}
         <div class="result-actions">
@@ -892,6 +980,57 @@
           `).join('')}
         </div>
       </section>
+      ${stats.timeStats.hasTrackedTimes ? (() => {
+        const ts = stats.timeStats;
+        const maxMs = Math.max(1000, ...ts.perQuestion.map(p => p.ms));
+        const statusText = {correct: 'Đúng', wrong: 'Sai', blank: 'Bỏ trống'};
+        return `
+          <section class="time-analytics panel" aria-label="Phân tích thời gian từng câu">
+            <div class="analytics-head">
+              <h2>${icon('clock')} Phân tích thời gian từng câu</h2>
+              <span class="clay-pill sky pill-compact">Chỉ tính khi thấy câu hỏi</span>
+            </div>
+            <div class="analytics-summary">
+              <div class="analytics-kpi">
+                <small>Tổng thời gian thực</small>
+                <strong>${ts.totalSeconds}s</strong>
+                <span>${time(ts.totalSeconds)}</span>
+              </div>
+              <div class="analytics-kpi">
+                <small>Trung bình / câu</small>
+                <strong>${ts.averageSeconds}s</strong>
+                <span>${stats.total} câu</span>
+              </div>
+              <div class="analytics-kpi">
+                <small>Nhanh nhất</small>
+                <strong>${ts.fastest ? formatSecs(ts.fastest.ms) : '—'}</strong>
+                <span>${ts.fastest ? `Câu ${ts.fastest.index + 1}` : 'Chưa có'}</span>
+              </div>
+              <div class="analytics-kpi">
+                <small>Mất nhiều giờ nhất</small>
+                <strong>${ts.slowest ? formatSecs(ts.slowest.ms) : '—'}</strong>
+                <span>${ts.slowest ? `Câu ${ts.slowest.index + 1}` : 'Chưa có'}</span>
+              </div>
+            </div>
+            ${ts.correctAvgSeconds !== null || ts.wrongAvgSeconds !== null ? `
+              <div class="analytics-compare">
+                ${ts.correctAvgSeconds !== null ? `<span>Trung bình câu đúng: <strong>${ts.correctAvgSeconds}s</strong></span>` : ''}
+                ${ts.wrongAvgSeconds !== null ? `<span>Trung bình câu sai: <strong>${ts.wrongAvgSeconds}s</strong></span>` : ''}
+              </div>
+            ` : ''}
+            <div class="time-bars">
+              ${ts.perQuestion.map(p => `
+                <button type="button" class="time-bar-row" data-jump-review="review-q-${p.index + 1}">
+                  <span class="time-bar-label">Câu ${p.index + 1}</span>
+                  <span class="pill pill-compact ${p.status === 'correct' ? 'positive' : p.status === 'wrong' ? 'negative' : 'muted'}">${statusText[p.status]}</span>
+                  <span class="time-bar-track" aria-hidden="true"><i class="time-bar-fill ${p.status}" style="width:${(p.ms / maxMs * 100).toFixed(1)}%"></i></span>
+                  <span class="time-bar-value">${formatSecs(p.ms)}</span>
+                </button>
+              `).join('')}
+            </div>
+          </section>
+        `;
+      })() : ''}
       <section class="review-section">
         <div class="section-heading">
           <h2>Đối chiếu đáp án</h2>
@@ -909,11 +1048,16 @@
           ${reviewIds.length ? reviewIds.map(id => {
             const q = qMap.get(id);
             const a = s.answers[id];
+            const qMs = currentQuestionMs(s, id);
+            const qOrder = orderMap.get(id);
             return `
-              <article class="review-card">
+              <article id="review-q-${qOrder}" class="review-card">
                 <div class="review-meta">
-                  <span>Câu ${orderMap.get(id)} · Bài ${q.lesson} · Câu nguồn ${q.sourceNumber}</span>
-                  <span class="pill ${!a ? 'muted' : a.correct ? 'positive' : 'negative'}">${!a ? 'Bỏ trống' : a.correct ? 'Đúng' : 'Sai'}</span>
+                  <span>Câu ${qOrder} · Bài ${q.lesson} · Câu nguồn ${q.sourceNumber}</span>
+                  <span class="review-badges">
+                    ${s.questionTimes && Object.keys(s.questionTimes).length ? `<span class="pill muted time-pill">${icon('clock')} ${formatSecs(qMs)}</span>` : ''}
+                    <span class="pill ${!a ? 'muted' : a.correct ? 'positive' : 'negative'}">${!a ? 'Bỏ trống' : a.correct ? 'Đúng' : 'Sai'}</span>
+                  </span>
                 </div>
                 <h3>${escape(q.text)}</h3>
                 <div class="review-options">
@@ -951,7 +1095,7 @@
               <span class="history-icon">${icon(s.config.type === 'exam' ? 'trophy' : 'book')}</span>
               <span>
                 <strong>${escape(c.name)} · ${escape(scopeLabel(s))}</strong>
-                <small>${escape(date(s.finishedAt))} · ${stats.total} câu · ${time(stats.elapsed)}</small>
+                <small>${escape(date(s.finishedAt))} · ${stats.total} câu · ${time(stats.activeElapsed)}</small>
               </span>
               <span class="history-score">
                 ${s.config.mode === 'retry' ? `${stats.percent}%` : `${stats.score.toFixed(1)}/10`}
@@ -1019,6 +1163,7 @@
 
     if (button.dataset.answer && active) {
       const q = questionById(sessionCourse(active), active.questionIds[active.current]);
+      syncQuestionClock(false);
       if (C.answer(active, q, button.dataset.answer)) {
         persist();
         renderQuiz();
@@ -1041,6 +1186,19 @@
     }
 
     if (button.dataset.index !== undefined && active) return navigate(+button.dataset.index);
+
+    if (button.dataset.jumpReview) {
+      if (reviewFilter !== 'all') {
+        reviewFilter = 'all';
+        renderResult();
+      }
+      const target = document.getElementById(button.dataset.jumpReview);
+      if (target) {
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        target.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+      }
+      return;
+    }
 
     if (button.dataset.result) {
       currentResult = history.find(s => s.id === button.dataset.result);
@@ -1224,17 +1382,35 @@
   function tick() {
     if (!active) return;
     if (C.expired(active)) return submit(true);
+    if (view !== 'quiz') return;
     const timer = $('#timer-value');
     if (timer) {
       timer.textContent = active.deadline
         ? time(Math.ceil((active.deadline - Date.now()) / 1000))
-        : time(Math.floor((Date.now() - active.startedAt) / 1000));
+        : time(Math.floor(activeTotalMs(active) / 1000));
       timer.parentElement.classList.toggle('urgent', !!active.deadline && active.deadline - Date.now() <= 60000);
+    }
+    const qTimer = $('#question-timer-value');
+    if (qTimer) {
+      const qId = active.questionIds[active.current];
+      qTimer.textContent = time(Math.floor(currentQuestionMs(active, qId) / 1000));
     }
   }
 
-  document.addEventListener('visibilitychange', tick);
-  window.addEventListener('pageshow', tick);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      syncQuestionClock(true);
+    } else {
+      syncQuestionClock(false);
+      tick();
+    }
+  });
+  window.addEventListener('pagehide', () => syncQuestionClock(true));
+  window.addEventListener('beforeunload', () => syncQuestionClock(true));
+  window.addEventListener('pageshow', () => {
+    syncQuestionClock(false);
+    tick();
+  });
   setInterval(tick, 1000);
 
   if (active && C.expired(active)) submit(true);

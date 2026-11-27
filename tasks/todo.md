@@ -222,12 +222,12 @@
 **Description:** Bổ sung bộ đếm thời gian gắn với trạng thái hiển thị thực của câu hỏi trong `app.js` (chỉ chạy khi `view === 'quiz'`, tab đang hiển thị `!document.hidden`, không mở `#dialog`, và dừng ngay khi chuyển về Góc học tập/Lịch sử, ẩn tab hoặc thoát trang) cùng khối **Phân tích thời gian làm bài** và thời gian từng câu trên màn hình Kết quả.
 
 **Acceptance criteria:**
-- [ ] Thoát khỏi phòng thi (về Góc học tập, Lịch sử, chuyển tab, đóng trang, mở dialog) thì bộ đếm câu và đồng hồ phiên không đếm giờ chờ.
-- [ ] Màn hình Kết quả hiển thị tổng thời gian thực, trung bình/câu, câu nhanh nhất/chậm nhất, so sánh tốc độ đúng/sai, biểu đồ thanh thời gian từng câu (click nhảy tới câu tương ứng) và thời gian trên từng `.review-card`.
+- [x] Thoát khỏi phòng thi (về Góc học tập, Lịch sử, chuyển tab, đóng trang, mở dialog) thì bộ đếm câu và đồng hồ phiên không đếm giờ chờ.
+- [x] Màn hình Kết quả hiển thị tổng thời gian thực, trung bình/câu, câu nhanh nhất/chậm nhất, so sánh tốc độ đúng/sai, biểu đồ thanh thời gian từng câu (click nhảy tới câu tương ứng) và thời gian trên từng `.review-card`.
 
 **Verification:**
-- [ ] Tests pass: `node --test tests/core.test.cjs`
-- [ ] Browser test pass: `python tests/browser_check.py`
+- [x] Tests pass: `node --test tests/core.test.cjs`
+- [x] Browser test pass: `python tests/browser_check.py`
 
 ---
 
